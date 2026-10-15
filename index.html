@@ -1,0 +1,1857 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>万家灯火</title>
+<meta name="description" content="一座会呼吸的三维夜城：用灯火、体温与潮汐讲清 GDP、失业率、通货膨胀、CPI、通货紧缩、衰退、货币政策与财政政策，最后由你来执掌这座城。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="万家灯火 · 8个词看懂一座城市的经济">
+<meta property="og:description" content="一座会呼吸的三维夜城：用灯火、体温与潮汐讲清 GDP、失业率、通货膨胀、CPI、通货紧缩、衰退、货币政策与财政政策，最后由你来执掌这座城。">
+<meta property="og:url" content="https://eason-xi.github.io/macro-economy-city/">
+<meta property="og:image" content="https://eason-xi.github.io/macro-economy-city/cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://eason-xi.github.io/macro-economy-city/cover.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;700;900&display=swap">
+<style>
+/* 版式概念：全屏夜城是舞台（固定 WebGL 画布）；叙事卡片像建筑图纸的取景框浮在左侧；右上是城市仪表，右缘是章节索引。单一夜景基调。 */
+:root{
+  --night:#05070d;
+  --night-2:#0c111f;
+  --ink:#ece6da;
+  --ink-dim:rgba(236,230,218,.66);
+  --ink-faint:rgba(236,230,218,.38);
+  --lamp:#ffc46b;      /* 钠灯琥珀：万家灯火 */
+  --amber:#ffa94d;     /* 体温计 */
+  --ember:#ff6a3d;     /* 发烧 */
+  --frost:#a9d2ff;     /* 冻结 */
+  --tide:#5fd4ff;      /* 央行潮汐 */
+  --gold:#ffd36b;      /* 政府建设 */
+  --coral:#f2a07e;     /* 熄灭的窗 */
+  --dusk:#b9a8e0;      /* 长夜 */
+  --dawn:#ffb592;      /* 黎明 */
+  --glass:rgba(6,9,18,.68);
+  --f-display:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --f-body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --f-latin:"Cormorant Garamond","Times New Roman",serif;
+  --f-mono:"JetBrains Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --acc:var(--lamp);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--night);color:var(--ink)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.78;-webkit-font-smoothing:antialiased;overflow-x:hidden;margin:0}
+::selection{background:rgba(255,196,107,.35);color:var(--ink)}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;background:var(--night)}
+body.dragging{cursor:grabbing;user-select:none}
+.no-gl #stage{display:none}
+.no-gl body{background:radial-gradient(120% 70% at 70% 100%,#2b1a10 0%,var(--night) 62%) fixed}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(60% 55% at 0% 100%,rgba(5,7,13,.62),rgba(5,7,13,0) 70%),linear-gradient(90deg,rgba(5,7,13,.55) 0%,rgba(5,7,13,.2) 36%,rgba(5,7,13,0) 58%)}
+main{position:relative;z-index:2}
+
+/* 三维标签 */
+.lbl{position:fixed;left:0;top:0;z-index:2;pointer-events:none;font:600 11px/1 var(--f-mono);letter-spacing:.22em;color:var(--tide);padding:5px 9px 5px 11px;border:1px solid currentColor;background:rgba(5,7,13,.55);opacity:0;transition:opacity .5s;white-space:nowrap;will-change:transform}
+.lbl::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:22px;background:linear-gradient(currentColor,transparent)}
+.lbl.gold{color:var(--gold)}
+
+/* 顶栏 */
+.brand{position:fixed;z-index:6;top:calc(14px + env(safe-area-inset-top,0px));left:16px;display:flex;align-items:center;gap:14px;font:500 11px/1 var(--f-mono);letter-spacing:.18em;color:var(--ink-faint)}
+.brand b{font:900 15px/1 var(--f-display);letter-spacing:.32em;color:var(--ink)}
+.sound{font:500 11px/1 var(--f-mono);letter-spacing:.14em;color:var(--ink-dim);background:rgba(5,7,13,.5);border:1px solid rgba(236,230,218,.18);padding:7px 10px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.sound i{display:inline-flex;gap:2px;align-items:flex-end;height:10px}
+.sound i s{display:block;width:2px;height:3px;background:currentColor;text-decoration:none}
+.sound[aria-pressed="true"]{color:var(--lamp);border-color:rgba(255,196,107,.5)}
+.sound[aria-pressed="true"] i s{animation:eq 1s ease-in-out infinite}
+.sound i s:nth-child(2){animation-delay:.2s!important}.sound i s:nth-child(3){animation-delay:.4s!important}
+@keyframes eq{50%{height:10px}}
+.sound:focus-visible,.rail a:focus-visible{outline:2px solid var(--lamp);outline-offset:3px}
+
+/* 城市仪表 */
+.hud{position:fixed;z-index:6;top:calc(14px + env(safe-area-inset-top,0px));right:16px;width:224px;padding:12px 14px 10px;background:rgba(5,7,13,.58);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(236,230,218,.08);font:400 12px/1.4 var(--f-mono);color:var(--ink-faint);transition:opacity .8s}
+.hud-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;letter-spacing:.16em;font-size:10.5px}
+.hud .row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-top:1px solid rgba(236,230,218,.05)}
+.hud .v{font:600 15px/1.2 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink);transition:color .6s}
+.v.hot{color:var(--ember)}.v.cold{color:var(--frost)}.v.bad{color:var(--coral)}
+.chip{font:600 10.5px/1 var(--f-body);letter-spacing:.12em;padding:5px 8px;border:1px solid currentColor;color:var(--lamp);white-space:nowrap}
+.chip.ember{color:var(--ember)}.chip.frost{color:var(--frost)}.chip.dim{color:var(--dusk)}.chip.dawn{color:var(--dawn)}
+body:not(.lit) .hud,body:not(.lit) .rail{opacity:0;pointer-events:none}
+
+/* 章节索引 */
+.rail{position:fixed;z-index:6;right:16px;top:50%;transform:translateY(-38%);display:flex;flex-direction:column;align-items:flex-end;gap:9px;transition:opacity .8s}
+.rail a{font:500 11px/1 var(--f-body);letter-spacing:.08em;color:var(--ink-faint);text-decoration:none;display:flex;align-items:center;gap:8px;padding:2px 0;transition:color .3s}
+.rail a::after{content:"";width:12px;height:1px;background:currentColor;transition:width .35s}
+.rail a:hover{color:var(--ink)}
+.rail a.on{color:var(--lamp)}.rail a.on::after{width:28px}
+
+/* 开场 */
+.intro{min-height:100svh;display:flex;align-items:flex-end;padding:0 16px 13vh max(16px,6vw)}
+.intro-inner{max-width:760px;text-shadow:0 0 18px rgba(5,7,13,.95),0 0 3px rgba(5,7,13,.9)}
+.kicker{font:500 12px/1.4 var(--f-mono);letter-spacing:.32em;color:var(--lamp);margin:0 0 18px;text-transform:uppercase}
+.title{font:900 clamp(64px,12vw,168px)/.98 var(--f-display);letter-spacing:.06em;margin:0;display:flex}
+.title span{color:rgba(236,230,218,.16);transition:color 1.2s ease,text-shadow 1.6s ease}
+.lit .title span{color:var(--ink);text-shadow:0 0 38px rgba(255,170,80,.45),0 0 90px rgba(255,140,60,.25)}
+.lit .title span:nth-child(2){transition-delay:.35s}.lit .title span:nth-child(3){transition-delay:.7s}.lit .title span:nth-child(4){transition-delay:1.05s}
+.lede{font:400 clamp(17px,1.6vw,21px)/1.9 var(--f-display);color:var(--ink);max-width:34em;margin:26px 0 0;text-wrap:pretty}
+.terms{font:400 12.5px/1.8 var(--f-mono);letter-spacing:.12em;color:var(--ink-faint);margin:16px 0 0}
+.ignite-row{display:flex;flex-wrap:wrap;align-items:center;gap:18px 26px;margin-top:34px}
+.ignite{position:relative;display:inline-flex;align-items:center;gap:14px;font:700 16px/1 var(--f-display);letter-spacing:.3em;color:var(--night);background:var(--lamp);border:0;padding:17px 26px 17px 20px;cursor:pointer;box-shadow:0 0 0 1px rgba(255,196,107,.4),0 0 40px rgba(255,170,80,.35);transition:box-shadow .3s,transform .3s}
+.ignite:hover{box-shadow:0 0 0 1px rgba(255,196,107,.6),0 0 70px rgba(255,170,80,.6);transform:translateY(-1px)}
+.ignite:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.ignite b{width:12px;height:12px;border-radius:50%;background:var(--night);box-shadow:inset 0 0 0 3px rgba(5,7,13,.35)}
+.lit .ignite{background:transparent;color:var(--lamp);box-shadow:0 0 0 1px rgba(255,196,107,.45)}
+.lit .ignite b{background:var(--lamp);box-shadow:0 0 14px var(--lamp)}
+.hint{font:400 12px/1.6 var(--f-mono);letter-spacing:.12em;color:var(--ink-faint);margin:0}
+.scrollcue{display:none;font:500 12px/1 var(--f-mono);letter-spacing:.24em;color:var(--lamp);margin-top:26px}
+.lit .scrollcue{display:block;animation:cue 2.4s ease-in-out infinite}
+@keyframes cue{50%{transform:translateY(6px);opacity:.55}}
+
+/* 章节卡片 */
+.ch{position:relative;min-height:100vh;padding-block:30vh;display:flex;align-items:center}
+.ch.center{justify-content:center}
+.card{--pad:clamp(20px,2.8vw,36px);position:relative;width:min(580px,46vw);margin-left:max(16px,6vw);padding:var(--pad);background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);border:1px solid rgba(236,230,218,.07);overflow:hidden;scroll-margin-top:9vh;transition:opacity .8s ease,transform .8s ease}
+.ch.center .card{width:min(860px,calc(100vw - 32px));margin-left:0}
+.js .ch:not(.on) .card{opacity:.26;transform:translateY(16px)}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+   linear-gradient(var(--acc),var(--acc)) top left/16px 1px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) top left/1px 16px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) top right/16px 1px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) top right/1px 16px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) bottom left/16px 1px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) bottom left/1px 16px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) bottom right/16px 1px no-repeat,
+   linear-gradient(var(--acc),var(--acc)) bottom right/1px 16px no-repeat}
+.wm{position:absolute;top:-.2em;right:-.03em;font:italic 600 clamp(80px,8.6vw,124px)/1 var(--f-latin);color:var(--acc);opacity:.13;pointer-events:none;white-space:nowrap}
+.eyebrow{font:500 11px/1.4 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 14px;display:flex;gap:12px;align-items:center;position:relative}
+.eyebrow .idx{color:var(--acc)}
+.card h2{position:relative;font:900 clamp(34px,4.2vw,52px)/1.12 var(--f-display);letter-spacing:.04em;margin:0;text-wrap:balance}
+.tag{position:relative;font:400 16px/1.5 var(--f-display);letter-spacing:.36em;color:var(--acc);margin:10px 0 0}
+.hook{font:400 18.5px/1.95 var(--f-display);color:var(--ink);margin:22px 0 0;text-wrap:pretty}
+.def{margin:22px 0 0;padding:16px 0 0;border-top:1px solid rgba(236,230,218,.1);font-size:15.5px;color:var(--ink);text-wrap:pretty}
+.lab{font:600 10.5px/1 var(--f-mono);letter-spacing:.22em;color:var(--acc);display:block;margin-bottom:9px;text-transform:uppercase}
+.formula{font:500 13.5px/1.7 var(--f-mono);color:var(--ink);background:rgba(255,255,255,.04);border-left:2px solid var(--acc);padding:9px 12px;margin:12px 0 0;overflow-x:auto;white-space:nowrap}
+.keys{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:12px}
+.keys li{position:relative;padding-left:20px;font-size:15px;line-height:1.8;color:var(--ink-dim);text-wrap:pretty}
+.keys li::before{content:"";position:absolute;left:1px;top:.68em;width:6px;height:6px;border:1px solid var(--acc);transform:rotate(45deg)}
+.keys b{color:var(--ink);font-weight:700}
+.remember{margin:24px 0 0;padding-top:16px;border-top:1px dashed rgba(236,230,218,.16);font:700 17px/1.65 var(--f-display);color:var(--acc);text-wrap:balance}
+.remember .lab{color:var(--ink-faint)}
+.w{margin-top:22px;padding:18px 0 0;border-top:1px solid rgba(236,230,218,.1)}
+.w p{margin:0}
+.note-s{font-size:13.5px;color:var(--ink-dim);line-height:1.7;margin-top:10px!important}
+.note-s b{color:var(--ink)}
+
+/* 主题色 */
+#gdp{--acc:var(--lamp)}#jobs{--acc:var(--coral)}#inflation{--acc:var(--ember)}#cpi{--acc:var(--amber)}#deflation{--acc:var(--frost)}#recession{--acc:var(--dusk)}#monetary{--acc:var(--tide)}#fiscal{--acc:var(--gold)}#web{--acc:var(--lamp)}#sandbox{--acc:var(--lamp)}#dawn{--acc:var(--dawn)}
+
+/* 控件 */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;margin:0;--p:50%}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--acc) var(--p),rgba(236,230,218,.18) var(--p))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border-radius:50%;background:var(--night);border:2px solid var(--acc);box-shadow:0 0 14px var(--acc)}
+input[type=range]::-moz-range-track{height:2px;background:rgba(236,230,218,.18)}
+input[type=range]::-moz-range-progress{height:2px;background:var(--acc)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--night);border:2px solid var(--acc);box-shadow:0 0 14px var(--acc)}
+input[type=range]:focus-visible{outline:1px dashed var(--acc);outline-offset:3px}
+.btn{font:500 14px/1.2 var(--f-body);letter-spacing:.04em;color:var(--ink);background:transparent;border:1px solid color-mix(in srgb,var(--acc) 65%,transparent);padding:9px 14px;cursor:pointer;transition:background .25s,box-shadow .25s,color .25s}
+.btn:hover{background:color-mix(in srgb,var(--acc) 16%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--acc) 28%,transparent)}
+.btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.btn.solid{background:var(--acc);color:var(--night);border-color:var(--acc);font-weight:700}
+.btn.solid:hover{box-shadow:0 0 30px color-mix(in srgb,var(--acc) 55%,transparent)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.ctl{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px}
+.ctl label{font-size:13.5px;color:var(--ink-dim)}
+.ctl output{font:600 14px/1 var(--f-mono);color:var(--acc);font-variant-numeric:tabular-nums}
+.ctl input{grid-column:1/-1}
+
+/* GDP 组件 */
+.bread{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.bread div{padding:10px 10px 9px;background:rgba(255,196,107,.06);border:1px solid rgba(255,196,107,.16);font-size:13px;line-height:1.5;color:var(--ink-dim)}
+.bread b{display:block;font:600 15px/1.3 var(--f-mono);color:var(--ink)}
+.va{display:flex;height:26px;margin:8px 0 4px}
+.va span{display:flex;align-items:center;justify-content:center;font:600 11.5px/1 var(--f-mono);color:var(--night)}
+.va span:nth-child(1){flex:1;background:#b88a4a}.va span:nth-child(2){flex:2;background:#dca55c}.va span:nth-child(3){flex:3;background:var(--lamp)}
+.sum-row{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px;margin-top:10px}
+.sum-row .x{color:var(--coral);font-family:var(--f-mono)}.sum-row .o{color:var(--lamp);font-family:var(--f-mono)}
+.cig{display:flex;height:12px;margin:12px 0 8px}
+.cig i{display:block;height:100%}
+.cig-l{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-dim)}
+.cig-l span{display:inline-flex;gap:7px;align-items:center}
+.cig-l span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+
+/* 失业组件 */
+.dots{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:clamp(3px,.55vw,6px);margin:4px 0 12px}
+.dots i{display:block;aspect-ratio:1;border-radius:50%;transition:background .4s,border-color .4s,box-shadow .4s}
+.dots i.emp{background:var(--lamp);box-shadow:0 0 7px rgba(255,196,107,.55)}
+.dots i.unemp{border:1.5px solid var(--ember);background:rgba(255,106,61,.12);animation:blinkU 2.4s ease-in-out infinite}
+.dots i.out{border:1px solid rgba(236,230,218,.2)}
+@keyframes blinkU{50%{box-shadow:0 0 10px rgba(255,106,61,.7)}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-dim);margin-bottom:12px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend .sw{width:9px;height:9px;border-radius:50%}
+.sw.emp{background:var(--lamp)}.sw.unemp{border:1.5px solid var(--ember)}.sw.out{border:1px solid rgba(236,230,218,.35)}
+.big-f{font:600 clamp(18px,2vw,22px)/1.3 var(--f-mono);color:var(--ink);margin:12px 0 0!important;font-variant-numeric:tabular-nums}
+.big-f em{font-style:normal;color:var(--acc)}
+
+/* 通胀组件 */
+.notebox{position:relative;height:120px;margin:8px 0 14px}
+.note-ghost,.money{position:absolute;left:0;bottom:0;width:min(250px,100%);height:116px}
+.note-ghost{border:1px dashed rgba(236,230,218,.28)}
+.note-ghost::after{content:"今天的 100 元";position:absolute;right:8px;top:6px;font:11px var(--f-mono);color:var(--ink-faint)}
+.money{transform-origin:left bottom;transition:transform .55s cubic-bezier(.2,.8,.2,1);border:1px solid rgba(255,150,110,.5);padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;color:#ffe2d2;
+  background:radial-gradient(circle at 76% 52%,rgba(255,210,180,.16) 0 20px,transparent 21px),repeating-radial-gradient(circle at 76% 52%,transparent 0 3px,rgba(255,120,80,.2) 3px 4px),linear-gradient(135deg,#5b2018,#250d0b)}
+.money .m1{font:600 10px/1 var(--f-mono);letter-spacing:.2em;opacity:.75}
+.money .m2{font:900 38px/1 var(--f-display)}
+.infl-out{font-size:15px;color:var(--ink-dim)}
+.infl-out b{font:600 19px/1 var(--f-mono);color:var(--ink)}
+.r72{font:500 12.5px/1.6 var(--f-mono);color:var(--acc);margin-top:6px!important}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin-bottom:12px}
+
+/* CPI 组件 */
+.cpi-read{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.cpi-read .idx{font:600 40px/1 var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.cpi-read .yoy{font:600 15px/1 var(--f-mono);color:var(--acc)}
+.thermo{margin:14px 0 4px}
+.thermo-track{position:relative;height:6px;background:linear-gradient(90deg,var(--frost) 0%,rgba(169,210,255,.3) 27%,rgba(255,196,107,.45) 45%,rgba(255,106,61,.65) 72%,var(--ember) 100%)}
+.thermo-mark{position:absolute;top:-7px;width:3px;height:20px;margin-left:-1px;background:var(--ink);box-shadow:0 0 12px var(--ink);transition:left .45s cubic-bezier(.2,.8,.2,1)}
+.thermo-ticks{position:relative;height:18px;font:10.5px/18px var(--f-mono);color:var(--ink-faint)}
+.thermo-ticks span{position:absolute;transform:translateX(-50%)}
+.basket{display:grid;gap:3px;margin-top:14px}
+.brow{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 3.6em 3.8em;gap:4px 12px;align-items:center;font-size:13px}
+.brow.h{font:10.5px/1.4 var(--f-mono);letter-spacing:.08em;color:var(--ink-faint);padding-bottom:2px}
+.bn{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bn small{font:11px var(--f-mono);color:var(--ink-faint);margin-left:6px}
+.bd,.bc{font:12px/1 var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-dim)}
+.bc{color:var(--acc)}
+.brow.pork .bn{color:var(--acc)}
+.insight{font-size:14px;color:var(--ink);margin-top:12px!important;padding:10px 12px;background:rgba(255,169,77,.08);border:1px solid rgba(255,169,77,.2)}
+.presets{margin-top:12px}
+.presets .btn{font-size:12.5px;padding:7px 10px}
+
+/* 通缩、衰退 SVG */
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;width:100%;height:auto;min-width:300px}
+.spiral text{font:13px var(--f-body);fill:var(--ink-dim)}
+.spiral .node circle{fill:var(--night);stroke:var(--frost);stroke-width:1.5;transition:fill .5s,r .5s}
+.spiral .node.hot circle{fill:var(--frost)}
+.spiral .node.hot text{fill:var(--ink)}
+.spiral .arc{fill:none;stroke:var(--frost);stroke-width:1.2;stroke-dasharray:3 5;animation:flow 1.4s linear infinite;opacity:.8}
+.spiral .ctr1{font:700 17px var(--f-display);fill:var(--frost)}
+.spiral .ctr2{font:11px var(--f-mono);fill:var(--ink-faint);letter-spacing:.2em}
+@keyframes flow{to{stroke-dashoffset:-16}}
+.cyc text{font:12px var(--f-body);fill:var(--ink-dim)}
+.cyc .lbl2{font:600 12.5px var(--f-body);fill:var(--ink)}
+.cyc .ax{font:10.5px var(--f-mono);fill:var(--ink-faint)}
+
+/* 货币政策 */
+.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.tools div{padding:10px;border:1px solid rgba(95,212,255,.18);background:rgba(95,212,255,.05);font-size:12.5px;line-height:1.6;color:var(--ink-dim)}
+.tools b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.rate{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.rate .rv{font:600 44px/1 var(--f-mono);color:var(--acc);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(95,212,255,.45)}
+.rate .rl{font:11px/1.5 var(--f-mono);color:var(--ink-faint);letter-spacing:.12em}
+.chain{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center}
+.chain li{font-size:13px;padding:6px 9px;border:1px solid rgba(236,230,218,.14);color:var(--ink-dim);transition:all .4s}
+.chain li+li::before{content:"→";margin:0 8px 0 -2px;color:var(--ink-faint)}
+.chain li.go{color:var(--ink);border-color:var(--acc);box-shadow:0 0 16px color-mix(in srgb,var(--acc) 30%,transparent)}
+.chain.down li.go{border-color:var(--ember);box-shadow:0 0 16px rgba(255,106,61,.3)}
+
+/* 财政政策 */
+.mult-k{font:500 14px/1.6 var(--f-mono);color:var(--ink-dim);margin:8px 0 14px!important}
+.mult-k b{color:var(--acc);font-size:18px}
+.rounds{display:grid;gap:4px;margin-top:14px;min-height:10px}
+.rd{display:grid;grid-template-columns:minmax(0,13.5em) minmax(0,1fr) 3em;gap:10px;align-items:center;font-size:12.5px;color:var(--ink-dim);animation:rdIn .5s ease both}
+.rd i{display:block;height:8px;background:linear-gradient(90deg,var(--gold),rgba(255,211,107,.45));box-shadow:0 0 12px rgba(255,211,107,.35);transform-origin:left;animation:grow .6s cubic-bezier(.2,.8,.2,1) both}
+.rd b{font:600 12px/1 var(--f-mono);color:var(--ink);text-align:right}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes rdIn{from{opacity:0;transform:translateY(4px)}}
+.mult-sum{font:600 15px/1.5 var(--f-mono);color:var(--ink);margin-top:12px!important}
+.mult-sum em{font-style:normal;color:var(--acc)}
+
+/* 关系网 */
+svg.web{min-width:560px}
+.web .edge{stroke:var(--ink-faint);stroke-width:1.2;fill:none;stroke-dasharray:4 6;animation:flow 1.6s linear infinite;transition:stroke .3s,opacity .3s}
+.web .elab{font:11.5px var(--f-body);fill:var(--ink-faint);paint-order:stroke;stroke:var(--night);stroke-width:5px;transition:fill .3s,opacity .3s}
+.web .nd rect{fill:var(--night-2);stroke-width:1.3;transition:filter .3s}
+.web .nd text{font:600 14px var(--f-body);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.web .nd{cursor:pointer;outline:none}
+.web .nd:focus-visible rect,.web .nd:hover rect{filter:drop-shadow(0 0 8px currentColor)}
+.web.focus .edge,.web.focus .elab{opacity:.18}
+.web.focus .edge.hot{opacity:1;stroke:var(--lamp)}
+.web.focus .elab.hot{opacity:1;fill:var(--ink)}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:18px}
+.cols p{font-size:14px;color:var(--ink-dim);margin:0;line-height:1.75}
+.cols b{display:block;color:var(--ink);font:700 15px/1.5 var(--f-display);margin-bottom:4px}
+
+/* 沙盘 */
+.sim-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:18px 0 12px}
+.sim-q,.sim-streak{font:500 12px/1 var(--f-mono);color:var(--ink-faint);letter-spacing:.06em}
+.sim-streak b{color:var(--lamp)}
+.sim-read{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:rgba(236,230,218,.08);border:1px solid rgba(236,230,218,.08)}
+.sim-read div{background:rgba(6,9,18,.85);padding:10px 10px 9px;display:flex;flex-direction:column;gap:6px}
+.sim-read span{font-size:11.5px;color:var(--ink-faint)}
+.sim-read b{font:600 20px/1 var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums;transition:color .5s}
+.sim-read b.hot{color:var(--ember)}.sim-read b.cold{color:var(--frost)}
+.sim-chart{margin-top:12px}
+.sim-chart canvas{display:block;width:100%;height:150px}
+.lg-row{display:flex;flex-wrap:wrap;gap:4px 16px;font:11px/1.6 var(--f-mono);color:var(--ink-faint);margin-top:6px}
+.lg-row span{display:inline-flex;align-items:center;gap:6px}
+.lg-row span::before{content:"";width:14px;height:2px;background:var(--c)}
+.lg-row span.band::before{height:8px;background:rgba(255,196,107,.18)}
+.sim-ctrl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 22px;margin-top:16px}
+.sim-shock{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+.sim-shock .lab{margin:0 6px 0 0}
+.sim-hint{font-size:14px;line-height:1.7;color:var(--ink);margin-top:14px!important;padding:10px 12px;border-left:2px solid var(--lamp);background:rgba(255,196,107,.06);min-height:3.2em}
+.sim-play{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.goal{font-size:13.5px;color:var(--ink-dim);margin-top:12px!important}
+.goal b{color:var(--ink)}
+
+/* 尾声 */
+.gloss{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(236,230,218,.08);margin-top:22px;border:1px solid rgba(236,230,218,.08)}
+.gloss div{background:rgba(6,9,18,.82);padding:14px 16px}
+.gloss dt{font:700 16px/1.4 var(--f-display);color:var(--ink);margin-bottom:4px}
+.gloss dt small{font:italic 500 14px var(--f-latin);color:var(--acc);margin-left:8px;letter-spacing:.02em}
+.gloss dd{margin:0;font-size:13.5px;line-height:1.7;color:var(--ink-dim)}
+.endline{font:400 19px/1.9 var(--f-display);margin-top:24px!important;color:var(--ink)}
+.credit{font:400 11.5px/1.7 var(--f-mono);color:var(--ink-faint);margin-top:20px!important;letter-spacing:.04em}
+
+@media (max-width:1100px){.card{width:min(580px,54vw)}}
+@media (max-width:860px){
+  .veil{background:linear-gradient(0deg,rgba(5,7,13,.55) 0%,rgba(5,7,13,0) 55%)}
+  .card,.ch.center .card{width:auto;margin:0 16px;scroll-margin-top:128px}
+  .ch{padding-block:46vh 40vh}
+  .rail{display:none}
+  .hud{left:16px;right:16px;width:auto;top:calc(50px + env(safe-area-inset-top,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 8px;padding:8px 10px}
+  .hud-head{display:none}
+  .hud .row{flex-direction:column;align-items:flex-start;border:0;padding:0;font-size:10px}
+  .hud .v{font-size:14px}
+  .intro{padding:0 16px 12vh}
+  .cols{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .brand .brand-sub{display:none}
+  .tools{grid-template-columns:1fr}
+  .two,.sim-ctrl{grid-template-columns:1fr}
+  .sim-read{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gloss{grid-template-columns:1fr}
+  .brow{grid-template-columns:minmax(0,1fr) 3.4em 3.6em;row-gap:0}
+  .brow input{grid-column:1/-1;grid-row:2}
+  .brow.h{display:none}
+  .rd{grid-template-columns:minmax(0,1fr) 3em}
+  .rd i{grid-column:1/-1;grid-row:2}
+  .bread{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.2s!important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+<div class="lbl" id="lblCB" aria-hidden="true">中央银行</div>
+<div class="lbl gold" id="lblGov" aria-hidden="true">政府</div>
+<div class="lbl gold" id="lblNew" aria-hidden="true">东部新区</div>
+
+<header class="brand">
+  <b>万家灯火</b><span class="brand-sub">宏观经济八个词</span>
+  <button class="sound" id="sound" type="button" aria-pressed="false"><i aria-hidden="true"><s></s><s></s><s></s></i><span>声音 · 关</span></button>
+</header>
+
+<aside class="hud" id="hud" aria-label="城市仪表">
+  <div class="hud-head"><span>城市仪表</span><span class="chip" id="hudState">稳健</span></div>
+  <div class="row"><span>GDP 增速</span><span class="v" id="hG">5.0%</span></div>
+  <div class="row"><span>CPI 同比</span><span class="v" id="hC">2.0%</span></div>
+  <div class="row"><span>失业率</span><span class="v" id="hU">5.0%</span></div>
+  <div class="row"><span>政策利率</span><span class="v" id="hR">3.00%</span></div>
+</aside>
+
+<nav class="rail" id="rail" aria-label="章节">
+  <a href="#gdp" data-i="1">GDP</a>
+  <a href="#jobs" data-i="2">失业率</a>
+  <a href="#inflation" data-i="3">通货膨胀</a>
+  <a href="#cpi" data-i="4">CPI</a>
+  <a href="#deflation" data-i="5">通货紧缩</a>
+  <a href="#recession" data-i="6">衰退</a>
+  <a href="#monetary" data-i="7">货币政策</a>
+  <a href="#fiscal" data-i="8">财政政策</a>
+  <a href="#web" data-i="9">关系网</a>
+  <a href="#sandbox" data-i="10">沙盘</a>
+</nav>
+
+<main>
+<!-- 开场 -->
+<section class="intro" id="intro">
+  <div class="intro-inner">
+    <p class="kicker">一座会呼吸的宏观经济</p>
+    <h1 class="title" aria-label="万家灯火"><span>万</span><span>家</span><span>灯</span><span>火</span></h1>
+    <p class="lede">每一扇亮着的窗后面，都有一份工作、一笔收入、一次消费。把一座城市的灯火加在一起，就是一个经济体。</p>
+    <p class="terms">GDP · 失业率 · 通货膨胀 · CPI · 通货紧缩 · 衰退 · 货币政策 · 财政政策</p>
+    <div class="ignite-row">
+      <button class="ignite" id="ignite" type="button"><b aria-hidden="true"></b><span>点亮这座城</span></button>
+      <p class="hint">建议打开声音<br>在空白处拖动可以旋转城市</p>
+    </div>
+    <p class="scrollcue">向下滚动，走进这座城 ↓</p>
+  </div>
+</section>
+
+<!-- 1 GDP -->
+<section class="ch" id="gdp">
+  <article class="card">
+    <span class="wm" aria-hidden="true">GDP</span>
+    <p class="eyebrow"><span class="idx">01 / 08</span>Gross Domestic Product</p>
+    <h2>国内生产总值</h2>
+    <p class="tag">城市的总亮度</p>
+    <p class="hook">把这座城市一年里的全部忙碌加在一起：每一块卖出的面包，每一次理发，每一栋新盖的楼。总数就是 GDP。</p>
+    <div class="def"><span class="lab">定义</span>一个国家或地区在一定时期内（一年或一个季度），在其境内生产的全部<b>最终</b>产品和服务的<b>市场价值</b>总和。</div>
+    <ul class="keys">
+      <li><b>只算最终产品。</b>小麦磨成面粉、面粉做成面包，只记面包的价钱，中间环节不重复计算。</li>
+      <li><b>四股车流。</b>从支出看，GDP = 消费 C + 投资 I + 政府购买 G + 净出口 NX。此刻街上的车流就按这四种用途染了色。</li>
+      <li><b>名义与实际。</b>名义 GDP 按当年价格计算；扣掉物价上涨的部分得到实际 GDP。新闻里说的「GDP 增长 5%」一般指实际增速。</li>
+      <li><b>一个参照。</b>中国 2024 年 GDP 约 134.9 万亿元，实际增长 5.0%。</li>
+    </ul>
+    <div class="w">
+      <span class="lab">一块面包的旅程</span>
+      <div class="bread">
+        <div><b>小麦 1 元</b>农民卖给磨坊</div>
+        <div><b>面粉 3 元</b>磨坊卖给面包店</div>
+        <div><b>面包 6 元</b>面包店卖给你</div>
+      </div>
+      <div class="va" aria-label="增加值：农民 1 元、磨坊 2 元、面包店 3 元"><span>+1</span><span>+2</span><span>+3</span></div>
+      <div class="sum-row">
+        <span class="x">1 + 3 + 6 = 10 元</span><span>把每笔交易都加起来，重复计算了</span>
+        <span class="o">6 元</span><span>只算最终产品，正好等于每一步的增加值 1 + 2 + 3</span>
+      </div>
+    </div>
+    <div class="w">
+      <span class="lab">此刻街上的车流（示意比例）</span>
+      <div class="cig" aria-hidden="true"><i style="flex:55;background:#ffa033"></i><i style="flex:25;background:#26e6c8"></i><i style="flex:17;background:#ff4d9a"></i><i style="flex:3;background:#8c80ff"></i></div>
+      <div class="cig-l"><span style="--c:#ffa033">消费 C 55%</span><span style="--c:#26e6c8">投资 I 25%</span><span style="--c:#ff4d9a">政府购买 G 17%</span><span style="--c:#8c80ff">净出口 NX 3%</span></div>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>GDP 衡量蛋糕做了多大，不回答蛋糕怎么分。</p>
+  </article>
+</section>
+
+<!-- 2 失业率 -->
+<section class="ch" id="jobs">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Jobs</span>
+    <p class="eyebrow"><span class="idx">02 / 08</span>Unemployment Rate</p>
+    <h2>失业率</h2>
+    <p class="tag">熄灭的窗</p>
+    <p class="hook">一扇窗熄灭，可能只是有人睡了。一整条街的窗一起熄灭，说明这里的工作在消失。</p>
+    <div class="def"><span class="lab">定义</span>失业人数占劳动力人数的比例。其中，劳动力 = 就业人数 + 失业人数。
+      <div class="formula">失业率 = 失业人数 ÷ 劳动力 × 100%</div></div>
+    <ul class="keys">
+      <li><b>失业有门槛。</b>要有劳动能力、想工作、并且正在找工作却没找到。学生、退休的人、暂时不打算工作的人不属于劳动力，不算失业。</li>
+      <li><b>三种失业。</b>摩擦性失业（刚辞职，正在换工作）；结构性失业（技能和岗位对不上）；周期性失业（经济不景气，企业裁员）。</li>
+      <li><b>不会是零。</b>前两种失业总会存在，健康经济里的失业率也有几个百分点，这个水平叫自然失业率。中国常用的城镇调查失业率近年在 5% 左右。</li>
+    </ul>
+    <div class="w">
+      <span class="lab">一百个成年人 · 拖动滑块，看城里的窗</span>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <div class="legend">
+        <span><i class="sw emp"></i>就业 <b id="jobsEmp">59</b></span>
+        <span><i class="sw unemp"></i>失业 <b id="jobsUn">3</b></span>
+        <span><i class="sw out"></i>不在劳动力中（学生、退休等）38</span>
+      </div>
+      <div class="ctl"><label for="jobsN">失业人数</label><output id="jobsNV">3 人</output>
+        <input type="range" id="jobsN" min="1" max="16" step="1" value="3"></div>
+      <p class="big-f">失业率 = <em id="jobsRate">3 ÷ 62 = 4.8%</em></p>
+      <p class="note-s" id="jobsNote">接近自然失业率，大多数窗都亮着。</p>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>失业率的分母是想工作的人，不是所有人。</p>
+  </article>
+</section>
+
+<!-- 3 通货膨胀 -->
+<section class="ch" id="inflation">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Inflation</span>
+    <p class="eyebrow"><span class="idx">03 / 08</span>Inflation</p>
+    <h2>通货膨胀</h2>
+    <p class="tag">发烧的城市</p>
+    <p class="hook">钱越来越多，跑得越来越快，货架上的东西却没有同样多起来。于是同样的东西，标价越来越高。</p>
+    <div class="def"><span class="lab">定义</span>一般物价水平在一段时间内<b>持续、普遍</b>地上涨。同样一张钞票能买到的东西变少了，也就是货币的购买力下降。</div>
+    <ul class="keys">
+      <li><b>普遍且持续。</b>只有猪肉涨价不算通胀；大多数商品和服务一起涨，并且涨了一段时间，才算。</li>
+      <li><b>三个来源。</b>需求拉动（大家抢着买，供不应求）；成本推动（原材料、能源、工资变贵）；货币超发（太多的钱追逐太少的商品）。</li>
+      <li><b>适度无妨，过度伤人。</b>许多央行把 2% 左右的温和通胀当作目标。恶性通胀会让货币几乎失去价值，比如 2008 年的津巴布韦。</li>
+    </ul>
+    <div class="w">
+      <span class="lab">你的 100 元 · 拖动通胀率，城市会跟着发烧</span>
+      <div class="two">
+        <div class="ctl"><label for="piR">年通胀率</label><output id="piV">8.0%</output><input type="range" id="piR" min="0" max="20" step="0.5" value="8"></div>
+        <div class="ctl"><label for="yrR">经过</label><output id="yrV">10 年</output><input type="range" id="yrR" min="1" max="30" step="1" value="10"></div>
+      </div>
+      <div class="notebox" aria-hidden="true">
+        <div class="note-ghost"></div>
+        <div class="money" id="money"><span class="m1">示意 · 购买力</span><span class="m2">¥100</span></div>
+      </div>
+      <p class="infl-out" id="inflOut">今天的 100 元，10 年后只能买到现在 <b>46.3 元</b> 的东西。</p>
+      <p class="r72" id="r72">72 法则：72 ÷ 8 ≈ 9 年，购买力减半。</p>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>通胀悄悄拿走的，是你手里每一块钱的分量。</p>
+  </article>
+</section>
+
+<!-- 4 CPI -->
+<section class="ch" id="cpi">
+  <article class="card">
+    <span class="wm" aria-hidden="true">CPI</span>
+    <p class="eyebrow"><span class="idx">04 / 08</span>Consumer Price Index</p>
+    <h2>居民消费价格指数</h2>
+    <p class="tag">城市的体温计</p>
+    <p class="hook">发烧要量体温。量一座城市的物价体温，用的是一只装满日常开销的购物篮。</p>
+    <div class="def"><span class="lab">定义</span>衡量居民日常消费的一篮子商品和服务价格变化的指数。把基期这篮子的价格记为 100，现在买同一篮子要花多少，就得到 CPI。
+      <div class="formula">CPI = 当期篮子总价 ÷ 基期篮子总价 × 100</div></div>
+    <ul class="keys">
+      <li><b>按花销分权重。</b>篮子分为食品烟酒、居住、交通通信等八大类。居民在哪类上花钱多，哪类的权重就大。</li>
+      <li><b>同比与环比。</b>「CPI 同比上涨 2%」是和去年同月相比；环比是和上个月相比。</li>
+      <li><b>通胀的主要读数。</b>CPI 持续明显上涨意味着通胀，持续下跌意味着通缩。剔除食品和能源后的「核心 CPI」更能看出长期趋势。</li>
+    </ul>
+    <div class="w">
+      <span class="lab">购物篮 · 拖动任意一项的涨跌幅</span>
+      <div class="cpi-read"><span class="idx" id="cpiIdx">101.3</span><span class="yoy" id="cpiYoy">同比 +1.3%</span></div>
+      <div class="thermo" aria-hidden="true">
+        <div class="thermo-track"><div class="thermo-mark" id="thermoMark" style="left:39%"></div></div>
+        <div class="thermo-ticks"><span style="left:0">−3%</span><span style="left:27.27%">0</span><span style="left:45.45%">2% 目标</span><span style="left:72.7%">5%</span><span style="left:100%;transform:translateX(-100%)">8%</span></div>
+      </div>
+      <div class="basket" id="basket">
+        <div class="brow h"><span>类别 · 权重</span><span>价格涨跌</span><span style="text-align:right">涨幅</span><span style="text-align:right">贡献</span></div>
+      </div>
+      <p class="insight" id="cpiInsight"></p>
+      <div class="btns presets">
+        <button class="btn" type="button" data-preset="pig">猪周期</button>
+        <button class="btn" type="button" data-preset="rent">房租上涨</button>
+        <button class="btn" type="button" data-preset="oil">油价飙升</button>
+        <button class="btn" type="button" data-preset="fall">全面降价</button>
+        <button class="btn" type="button" data-preset="base">恢复</button>
+      </div>
+      <p class="note-s">权重为示意，接近中国 CPI 的大致结构；猪肉权重为估算。</p>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>CPI 是加权平均。单一商品涨得再凶，也要乘上它的权重。</p>
+  </article>
+</section>
+
+<!-- 5 通缩 -->
+<section class="ch" id="deflation">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Deflation</span>
+    <p class="eyebrow"><span class="idx">05 / 08</span>Deflation</p>
+    <h2>通货紧缩</h2>
+    <p class="tag">冻结的街道</p>
+    <p class="hook">东西变便宜了，听起来是好事。可如果全城的人都在等明天更便宜，今天就没有人花钱了。</p>
+    <div class="def"><span class="lab">定义</span>一般物价水平<b>持续、普遍</b>地下降，通常表现为 CPI 在较长时间里负增长。钱更值钱了，经济活动却往往随之冷却。</div>
+    <div class="w">
+      <span class="lab">通缩螺旋</span>
+      <div class="svgbox"><svg class="spiral" id="spiral" viewBox="0 0 360 300" role="img" aria-label="通缩螺旋：物价下跌，推迟消费，企业收入减少，降薪裁员，需求更弱，物价继续下跌">
+        <defs><marker id="arF" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a9d2ff"/></marker></defs>
+        <path class="arc" d="M201.8 47.3A105 105 0 0 1 270.9 97.5" marker-end="url(#arF)"/>
+        <path class="arc" d="M284.4 139A105 105 0 0 1 258 220.3" marker-end="url(#arF)"/>
+        <path class="arc" d="M222.7 245.9A105 105 0 0 1 137.3 245.9" marker-end="url(#arF)"/>
+        <path class="arc" d="M102 220.3A105 105 0 0 1 75.6 139" marker-end="url(#arF)"/>
+        <path class="arc" d="M89.1 97.5A105 105 0 0 1 158.2 47.3" marker-end="url(#arF)"/>
+        <g class="node"><circle cx="180" cy="45" r="6"/><text x="180" y="27" text-anchor="middle">物价下跌</text></g>
+        <g class="node"><circle cx="279.9" cy="117.6" r="6"/><text x="292" y="114" text-anchor="start">推迟消费</text></g>
+        <g class="node"><circle cx="241.7" cy="234.9" r="6"/><text x="254" y="252" text-anchor="start">企业收入减少</text></g>
+        <g class="node"><circle cx="118.3" cy="234.9" r="6"/><text x="106" y="252" text-anchor="end">降薪裁员</text></g>
+        <g class="node"><circle cx="80.1" cy="117.6" r="6"/><text x="68" y="114" text-anchor="end">需求更弱</text></g>
+        <text class="ctr1" x="180" y="150" text-anchor="middle">越跌越冷</text>
+        <text class="ctr2" x="180" y="172" text-anchor="middle">自我强化</text>
+      </svg></div>
+    </div>
+    <ul class="keys">
+      <li><b>危险在螺旋。</b>物价下跌，人们推迟消费、企业推迟投资；企业收入减少，只好降薪裁员；收入下降让需求更弱，物价继续下跌。</li>
+      <li><b>债务变重。</b>收入和物价都在跌，欠的钱一分不少，还债的实际负担反而加重。</li>
+      <li><b>不同于通胀放缓。</b>通胀从 5% 降到 2%，物价仍在上涨，只是涨得慢了，这不是通缩。</li>
+      <li><b>比通胀更难治。</b>利率降到零附近就很难再降。日本在 1990 年代泡沫破裂后，经历了多年低物价、低增长。</li>
+    </ul>
+    <p class="remember"><span class="lab">一句话记住</span>温和的通胀像体温，持续的通缩像失温。</p>
+  </article>
+</section>
+
+<!-- 6 衰退 -->
+<section class="ch" id="recession">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Recession</span>
+    <p class="eyebrow"><span class="idx">06 / 08</span>Recession</p>
+    <h2>经济衰退</h2>
+    <p class="tag">长夜</p>
+    <p class="hook">灯一片一片地灭下去。工厂减产，商店关门，招聘停止。</p>
+    <div class="def"><span class="lab">定义</span>经济活动在大范围内<b>显著、持续</b>地下降：产出、就业、收入和销售同时走弱。</div>
+    <ul class="keys">
+      <li><b>经验法则。</b>实际 GDP 连续两个季度环比负增长，常被称为「技术性衰退」。美国则由国家经济研究局（NBER）综合就业、收入、生产等多项指标正式认定。</li>
+      <li><b>周期的一环。</b>经济大致按扩张、顶峰、衰退、谷底、复苏循环往复，衰退是其中下行的一段。</li>
+      <li><b>程度有别。</b>更深、更久的衰退叫萧条，比如始于 1929 年的大萧条；2008 年全球金融危机引发的那一次被称为「大衰退」。</li>
+    </ul>
+    <div class="w">
+      <span class="lab">经济周期</span>
+      <div class="svgbox"><svg class="cyc" id="cycle" viewBox="0 0 520 200" role="img" aria-label="经济周期曲线：扩张、顶峰、衰退、谷底、复苏，围绕向上的长期趋势波动"></svg></div>
+    </div>
+    <div class="w">
+      <span class="lab">两年八个季度的实际 GDP 环比增速（示意）</span>
+      <div class="svgbox"><svg class="cyc" id="bars" viewBox="0 0 520 170" role="img" aria-label="八个季度的增速柱状图，第六、第七季度为负，构成技术性衰退"></svg></div>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>衰退来临时，GDP 下滑和失业上升往往同时发生。</p>
+  </article>
+</section>
+
+<!-- 7 货币政策 -->
+<section class="ch" id="monetary">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Monetary</span>
+    <p class="eyebrow"><span class="idx">07 / 08</span>Monetary Policy</p>
+    <h2>货币政策</h2>
+    <p class="tag">央行的潮汐</p>
+    <p class="hook">城市中央那座塔不直接花钱。它决定钱有多贵、有多少。</p>
+    <div class="def"><span class="lab">定义</span>中央银行通过调节<b>利率</b>和<b>货币供应量</b>，影响借贷、消费和投资，以稳定物价、促进就业和经济增长。中国由中国人民银行实施，美国由美联储实施。</div>
+    <div class="tools">
+      <div><b>政策利率</b>降息让借钱更便宜，加息则更贵。</div>
+      <div><b>存款准备金率</b>银行必须存在央行的比例。降准等于放出更多可贷资金。</div>
+      <div><b>公开市场操作</b>央行买卖债券，向市场投放或回笼资金。</div>
+    </div>
+    <div class="w">
+      <span class="lab">你来调利率 · 1 个基点 = 0.01%</span>
+      <div class="rate">
+        <span class="rv" id="monRate">4.50%</span>
+        <span class="rl">政策利率<br>每次调整 50 个基点</span>
+        <span class="btns"><button class="btn solid" type="button" id="monCut">降息</button><button class="btn" type="button" id="monHike">加息</button></span>
+      </div>
+      <ol class="chain" id="chain"><li>降息</li><li>借钱更便宜</li><li>投资、消费增加</li><li>需求上升</li><li>就业增加 · 物价上行</li></ol>
+    </div>
+    <ul class="keys">
+      <li><b>两个方向。</b>宽松：降息、降准、投放资金，用来刺激低迷的经济。紧缩：加息、回笼资金，用来给过热的经济和通胀降温。</li>
+      <li><b>有时滞。</b>利率的变化传到就业和物价，通常要几个季度。</li>
+    </ul>
+    <p class="remember"><span class="lab">一句话记住</span>货币政策调的是钱的价格和数量，间接影响需求。</p>
+  </article>
+</section>
+
+<!-- 8 财政政策 -->
+<section class="ch" id="fiscal">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Fiscal</span>
+    <p class="eyebrow"><span class="idx">08 / 08</span>Fiscal Policy</p>
+    <h2>财政政策</h2>
+    <p class="tag">政府的双手</p>
+    <p class="hook">央行管的是水闸，政府则直接下场：它花钱，也收税。</p>
+    <div class="def"><span class="lab">定义</span>政府通过调整<b>财政支出</b>和<b>税收</b>，影响社会总需求和经济运行。</div>
+    <div class="w">
+      <span class="lab">乘数效应 · 看金色涟漪在城里传开</span>
+      <div class="ctl"><label for="mpc">边际消费倾向（新增收入里花掉的比例）</label><output id="mpcV">0.80</output><input type="range" id="mpc" min="0.5" max="0.9" step="0.05" value="0.8"></div>
+      <p class="mult-k">乘数 = 1 ÷ (1 − <span id="mpcK">0.80</span>) = <b id="multV">5.0</b></p>
+      <button class="btn solid" type="button" id="fisGo">政府投资 1 元，开工</button>
+      <div class="rounds" id="rounds"></div>
+      <p class="mult-sum" id="multSum">累计带动需求：<em>0.00 元</em></p>
+    </div>
+    <ul class="keys">
+      <li><b>扩张与紧缩。</b>经济低迷时增加支出（修路、建桥、发补贴）或减税，把需求托起来；经济过热时减少支出或增税，让它降温。</li>
+      <li><b>乘数效应。</b>政府付给工人 1 元，工人花掉 0.8 元成为店主的收入，店主再花掉 0.64 元……最初的 1 元最终带动约 1 ÷ (1 − 0.8) = 5 元的需求。现实中有税收、储蓄和进口的漏出，乘数会小得多。</li>
+      <li><b>有代价。</b>扩张会增加赤字和政府债务；借钱太多还可能推高利率，挤出私人投资。</li>
+      <li><b>两种政策的分工。</b>货币政策由央行掌握，通过利率和信贷间接起效；财政政策由政府决定，通过花钱和收税直接起效。</li>
+    </ul>
+    <p class="remember"><span class="lab">一句话记住</span>财政政策直接花钱，花出的每一元会在城里转好几手。</p>
+  </article>
+</section>
+
+<!-- 9 关系网 -->
+<section class="ch center" id="web">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Network</span>
+    <p class="eyebrow"><span class="idx">全景</span>How They Connect</p>
+    <h2>八个词，一张网</h2>
+    <p class="tag">它们彼此牵动</p>
+    <p class="hook">两只调节之手都作用在总需求上。需求先改变产出，产出牵动就业；需求也推动物价，由 CPI 负责读数。把鼠标移到任意一个词上，看它连着谁。</p>
+    <div class="w">
+      <div class="svgbox"><svg class="web" id="webSvg" viewBox="0 0 720 450" role="img" aria-label="关系图：货币政策和财政政策影响总需求；总需求影响 GDP 和物价；GDP 与失业率反向变动，持续下滑即衰退；CPI 持续上涨为通胀，持续下跌为通缩；失业率与通胀短期此消彼长"></svg></div>
+    </div>
+    <div class="cols">
+      <p><b>奥肯定律</b>经济增速低于潜在水平时，失业率通常上升。GDP 和失业率像跷跷板的两端。</p>
+      <p><b>菲利普斯曲线</b>短期内，失业率低时通胀往往偏高，反之偏低。1970 年代石油危机带来的滞胀是例外：通胀和失业一起上升。</p>
+      <p><b>政策的反馈</b>通胀过热时，央行加息、政府收紧开支；衰退和通缩时，降息、扩大支出。读数一变，调节之手就会出手。</p>
+    </div>
+    <p class="remember"><span class="lab">一句话记住</span>看懂宏观经济，就是看懂这张网怎样联动。</p>
+  </article>
+</section>
+
+<!-- 10 沙盘 -->
+<section class="ch" id="sandbox">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Your turn</span>
+    <p class="eyebrow"><span class="idx">沙盘</span>Run the City</p>
+    <h2>这座城交给你</h2>
+    <p class="tag">央行与财政都归你管</p>
+    <p class="goal">每过约 1 秒，城市走过一个季度。<b>目标：CPI 稳在 2% 左右，失业率不高于 6%，增速不低于 2%</b>，坚持得越久越好。也可以亲手制造一场危机，再想办法把城市救回来。</p>
+    <div class="sim-head">
+      <span class="chip" id="simState">稳健</span>
+      <span class="sim-q" id="simQ">第 1 季度</span>
+      <span class="sim-streak" id="simStreak">连续达标 <b>0</b> 季 · 最佳 0</span>
+    </div>
+    <div class="sim-read">
+      <div><span>GDP 增速</span><b id="sG">4.5%</b></div>
+      <div><span>CPI 同比</span><b id="sC">2.0%</b></div>
+      <div><span>失业率</span><b id="sU">5.0%</b></div>
+      <div><span>政府债务/GDP</span><b id="sD">60%</b></div>
+    </div>
+    <div class="sim-chart">
+      <canvas id="simChart" role="img" aria-label="最近 40 个季度的 GDP 增速、CPI 与失业率走势"></canvas>
+      <div class="lg-row"><span style="--c:#ffc46b">GDP 增速</span><span style="--c:#ff6a3d">CPI</span><span style="--c:#5fd4ff">失业率</span><span class="band">1%–3% 物价目标带</span><span>← 过去 40 个季度</span></div>
+    </div>
+    <div class="sim-ctrl">
+      <div class="ctl"><label for="simRate">政策利率</label><output id="simRateV">3.00%</output><input type="range" id="simRate" min="0" max="10" step="0.25" value="3"></div>
+      <div class="ctl"><label for="simFis">财政支出（占 GDP）</label><output id="simFisV">中性</output><input type="range" id="simFis" min="-3" max="3" step="0.5" value="0"></div>
+    </div>
+    <div class="sim-shock">
+      <span class="lab">制造冲击</span>
+      <button class="btn" type="button" data-shock="crisis">金融危机</button>
+      <button class="btn" type="button" data-shock="oil">石油危机</button>
+      <button class="btn" type="button" data-shock="boom">消费狂热</button>
+    </div>
+    <p class="sim-hint" id="simHint">城市运转平稳。试着把利率降到 0 并保持一阵，看看会发生什么。</p>
+    <div class="sim-play">
+      <button class="btn" type="button" id="simPause">暂停</button>
+      <button class="btn" type="button" id="simFast">加速 ×3</button>
+      <button class="btn" type="button" id="simReset">重置</button>
+    </div>
+  </article>
+</section>
+
+<!-- 尾声 -->
+<section class="ch center" id="dawn">
+  <article class="card">
+    <span class="wm" aria-hidden="true">Dawn</span>
+    <p class="eyebrow"><span class="idx">尾声</span>Daybreak</p>
+    <h2>天亮了</h2>
+    <p class="tag">灯熄了，人们去上班</p>
+    <p class="hook">天亮时灯一盏盏熄灭，这次不是因为衰退，而是因为人们出门工作去了。宏观经济学里的那些数字，说到底都关于窗后面的人：有没有工作，钱还值不值钱，明天会不会更好。</p>
+    <dl class="gloss">
+      <div><dt>GDP<small>Gross Domestic Product</small></dt><dd>一定时期内，境内生产的全部最终产品和服务的市场价值。</dd></div>
+      <div><dt>失业率<small>Unemployment</small></dt><dd>想工作却找不到工作的人，占劳动力的比例。</dd></div>
+      <div><dt>通货膨胀<small>Inflation</small></dt><dd>物价普遍、持续地上涨，钱变得不值钱。</dd></div>
+      <div><dt>CPI<small>Consumer Price Index</small></dt><dd>一篮子日常消费品和服务的价格指数，衡量通胀最常用的读数。</dd></div>
+      <div><dt>通货紧缩<small>Deflation</small></dt><dd>物价普遍、持续地下跌，常伴随需求萎缩、债务变重。</dd></div>
+      <div><dt>衰退<small>Recession</small></dt><dd>经济活动大范围、持续地下降；实际 GDP 连续两个季度负增长是常见信号。</dd></div>
+      <div><dt>货币政策<small>Monetary Policy</small></dt><dd>央行调节利率和货币供应，影响借贷和需求。</dd></div>
+      <div><dt>财政政策<small>Fiscal Policy</small></dt><dd>政府调节支出和税收，直接影响总需求。</dd></div>
+    </dl>
+    <p class="endline">愿每一扇窗都亮着，愿每一份工资都经得起时间。</p>
+    <div class="btns" style="margin-top:18px"><button class="btn solid" type="button" id="toSand">回到沙盘</button><button class="btn" type="button" id="toTop">从头再看</button></div>
+    <p class="credit">城市、沙盘与示意图中的数据均为教学模拟。中国 GDP 数据来自国家统计局对 2024 年的初步核算。</p>
+  </article>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+document.documentElement.classList.add('js');
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const now=()=>performance.now()/1000;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const neg=s=>s.replace('-','−');
+const f1=(x,d=1)=>neg((Math.abs(x)<.05&&d===1?0:x).toFixed(d));
+const sgn=(x,d=1)=>(x>0.0001?'+':'')+neg(x.toFixed(d));
+
+/* ================= 共享状态 ================= */
+const BASE={lit:.84,warm:0,traffic:.9,speed:1,fog:.16,snow:0,heat:0,dim:0,desat:0,colorMode:0,build:0,cb:0,gov:0,ember:0,black:0,money:0,dawn:0};
+const KEYS=Object.keys(BASE);
+const RATE={colorMode:2.2,money:4,snow:.9,heat:1,dawn:.45,build:.32,lit:1.1,black:.9};
+const V=Object.assign({},BASE), Vc=Object.assign({},BASE);
+const CITY=window.CITY={V,Vc,cam:null,orbit:true,viewShift:0,igniteT:-1,pulses:[],ripples:[],built:false,sandbox:false,chapter:0,reduce:RM,glReady:false};
+
+const warmFromPi=p=>p>3?clamp((p-3)/7,0,1):p<1?clamp((p-1)/3,-1,0):0;
+const litFromU=u=>clamp(.9-(u-3)*.036,.14,.92);
+
+/* ================= 镜头 ================= */
+const CAMS={
+  intro:{az:.55,el:.12,dist:122,tx:0,ty:8,tz:0,orbit:true},
+  gdp:{az:.85,el:1.0,dist:168,tx:0,ty:0,tz:-2,orbit:true},
+  jobs:{az:.95,el:.3,dist:36,tx:-25,ty:4,tz:28},
+  infl:{az:3.4,el:.36,dist:102,tx:0,ty:5,tz:0,orbit:true},
+  cpi:{az:5.55,el:.26,dist:48,tx:16,ty:3,tz:28},
+  defl:{az:5.0,el:.5,dist:118,tx:0,ty:3,tz:0,orbit:true},
+  rec:{az:.2,el:.8,dist:152,tx:0,ty:0,tz:0,orbit:true},
+  mon:{az:2.05,el:.2,dist:84,tx:0,ty:21,tz:0},
+  fis:{az:1.0,el:.5,dist:112,tx:16,ty:4,tz:24},
+  web:{az:2.6,el:.62,dist:150,tx:0,ty:4,tz:0,orbit:true},
+  sand:{az:.95,el:.56,dist:134,tx:0,ty:4,tz:0,orbit:true},
+  outro:{az:3.9,el:.1,dist:128,tx:0,ty:9,tz:0,orbit:true}
+};
+
+/* ================= 组件状态 ================= */
+const W={jobsN:3,pi:8,years:10,cpi:1.3,rMon:4.5,fisK:0,mpc:.8};
+let moneyT=-99, moneySign=1;
+
+/* ================= 章节 ================= */
+const CH=[
+ {id:'intro',cam:'intro',state:()=>({}),hud:()=>({g:5,c:2,u:5,r:3})},
+ {id:'gdp',cam:'gdp',state:()=>({colorMode:1,lit:.86,traffic:1,fog:.1}),hud:()=>({g:5,c:2,u:5,r:3})},
+ {id:'jobs',cam:'jobs',state:()=>{const u=W.jobsN/62*100;return{lit:litFromU(u),traffic:clamp(.95-(u-5)*.035,.3,1),black:clamp((u-9)/25,0,.35),fog:.13};},hud:()=>{const u=W.jobsN/62*100;return{g:5-(u-5)*.5,c:2-(u-5)*.1,u,r:3};}},
+ {id:'infl',cam:'infl',state:()=>({warm:warmFromPi(W.pi),heat:clamp((W.pi-4)/10,0,1),ember:clamp((W.pi-2.5)/8,0,1),speed:1+W.pi*.06,traffic:1,lit:.9,fog:.15}),hud:()=>({g:6.4,c:W.pi,u:4.2,r:3})},
+ {id:'cpi',cam:'cpi',state:()=>({warm:warmFromPi(W.cpi),heat:clamp((W.cpi-4)/10,0,1),ember:clamp((W.cpi-2.5)/8,0,1),snow:clamp(-W.cpi/1.6,0,1),speed:clamp(1+W.cpi*.05,.4,2),traffic:.95,lit:.86}),hud:()=>({g:5,c:W.cpi,u:5,r:3})},
+ {id:'defl',cam:'defl',state:()=>({warm:-.95,snow:1,speed:.36,traffic:.45,lit:.6,desat:.28,fog:.3}),hud:()=>({g:.6,c:-1.2,u:7.4,r:1})},
+ {id:'rec',cam:'rec',state:()=>({lit:.58,black:.6,dim:.38,traffic:.28,speed:.5,fog:.45,desat:.5,warm:-.12}),hud:()=>({g:-3.6,c:.3,u:10.5,r:2})},
+ {id:'mon',cam:'mon',state:()=>{const r=W.rMon;return{cb:1,lit:clamp(.36+(6-r)*.085,.25,.9),traffic:clamp(.3+(6-r)*.12,.2,1),speed:clamp(.6+(6-r)*.12,.5,1.5),warm:clamp((2.5-r)*.25,-.25,.9),ember:clamp((1.5-r)*.4,0,.6),black:clamp((r-3)*.13,0,.4),dim:clamp((r-3)*.1,0,.3),fog:.2+clamp((r-3)*.08,0,.25)};},hud:()=>{const r=W.rMon;return{g:4.6-(r-3)*1.3,c:2+(3-r)*.7,u:5+(r-3)*.9,r};}},
+ {id:'fis',cam:'fis',state:()=>{const k=W.fisK;return{gov:1,lit:.5+.36*k,traffic:.35+.62*k,speed:.6+.45*k,black:.38*(1-k),dim:.3*(1-k),fog:.4-.25*k,desat:.35*(1-k)};},hud:()=>{const k=W.fisK;return{g:-1+5.8*k,c:.8+1.2*k,u:9.5-4.3*k,r:1};}},
+ {id:'web',cam:'web',center:true,state:()=>({lit:.86,traffic:1}),hud:()=>({g:5,c:2,u:5,r:3})},
+ {id:'sand',cam:'sand',state:()=>simVisual(),hud:()=>simHud()},
+ {id:'outro',cam:'outro',center:true,state:()=>({dawn:1,lit:.42,traffic:.75,fog:.22}),hud:()=>({g:5,c:2,u:5,r:3,tag:['黎明','dawn']})}
+];
+const SECTIONS=$$('main > section');
+let active=0;
+CITY.cam=Object.assign({},CAMS.intro);
+
+/* ================= 音频（生成式） ================= */
+const AU={ctx:null,on:false};
+function impulse(ctx,sec,decay){const len=Math.floor(ctx.sampleRate*sec),b=ctx.createBuffer(2,len,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}return b;}
+function auInit(){
+  if(AU.ctx)return true;
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return false;
+  try{
+    const ctx=AU.ctx=new AC();
+    const master=AU.master=ctx.createGain(); master.gain.value=0;
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-16; comp.ratio.value=3;
+    master.connect(comp); comp.connect(ctx.destination);
+    const conv=ctx.createConvolver(); conv.buffer=impulse(ctx,4.5,2.6);
+    const wet=ctx.createGain(); wet.gain.value=.5; conv.connect(wet); wet.connect(master);
+    const bus=AU.bus=ctx.createGain(); bus.connect(master); const s1=ctx.createGain(); s1.gain.value=.55; bus.connect(s1); s1.connect(conv);
+    const fx=AU.fx=ctx.createGain(); fx.connect(master); const s2=ctx.createGain(); s2.gain.value=.9; fx.connect(s2); s2.connect(conv);
+    const lp=AU.lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=300; lp.Q.value=.7; lp.connect(bus);
+    // D 大七和弦：D2 A2 D3 F#3 A3 C#4
+    AU.voices=[73.42,110,146.83,185,220,277.18].map((f,i)=>{
+      const g=ctx.createGain(); g.gain.value=0; g.connect(lp);
+      const o1=ctx.createOscillator(), o2=ctx.createOscillator();
+      o1.type=o2.type=i<2?'sawtooth':'triangle';
+      o1.frequency.value=o2.frequency.value=f; o1.detune.value=-4; o2.detune.value=5+i*1.5;
+      o1.connect(g); o2.connect(g); o1.start(); o2.start();
+      return {g,o1,o2,f};
+    });
+    const lfo=ctx.createOscillator(); lfo.frequency.value=6.2; const lg=AU.lfoG=ctx.createGain(); lg.gain.value=0; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    const len=ctx.sampleRate*3, nb=AU.noise=ctx.createBuffer(1,len,ctx.sampleRate), ch=nb.getChannelData(0); let l=0;
+    for(let i=0;i<len;i++){const w=Math.random()*2-1; l=(l+.02*w)/1.02; ch[i]=l*3.2;}
+    const ns=ctx.createBufferSource(); ns.buffer=nb; ns.loop=true;
+    const nf=ctx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=480;
+    const ng=AU.noiseG=ctx.createGain(); ng.gain.value=0; ns.connect(nf); nf.connect(ng); ng.connect(bus); ns.start();
+    return true;
+  }catch(e){AU.ctx=null;return false;}
+}
+function auSet(on){
+  if(on&&!auInit())return;
+  AU.on=on;
+  if(AU.ctx){ if(on)AU.ctx.resume(); AU.master.gain.setTargetAtTime(on?.55:0,AU.ctx.currentTime,.5); }
+  const b=$('#sound'); b.setAttribute('aria-pressed',on?'true':'false'); b.querySelector('span').textContent=on?'声音 · 开':'声音 · 关';
+}
+function bell(f,amp=.1,dur=3){
+  if(!AU.on)return; const ctx=AU.ctx,c=ctx.currentTime;
+  const g=ctx.createGain(); g.gain.setValueAtTime(0,c); g.gain.linearRampToValueAtTime(amp,c+.01); g.gain.exponentialRampToValueAtTime(.0001,c+dur); g.connect(AU.fx);
+  [[1,1],[2.76,.32],[5.4,.1]].forEach(([m,a])=>{const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f*m; const og=ctx.createGain(); og.gain.value=a; o.connect(og); og.connect(g); o.start(c); o.stop(c+dur+.1);});
+}
+function noiseHit(dur,f0,f1,amp,q=1.2){
+  if(!AU.on)return; const ctx=AU.ctx,c=ctx.currentTime;
+  const s=ctx.createBufferSource(); s.buffer=AU.noise; const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=q;
+  bp.frequency.setValueAtTime(f0,c); bp.frequency.exponentialRampToValueAtTime(f1,c+dur);
+  const g=ctx.createGain(); g.gain.setValueAtTime(0,c); g.gain.linearRampToValueAtTime(amp,c+dur*.45); g.gain.linearRampToValueAtTime(0,c+dur);
+  s.connect(bp); bp.connect(g); g.connect(AU.fx); s.start(c); s.stop(c+dur+.05);
+}
+function swell(){ if(!AU.on)return; noiseHit(3.2,180,2600,.32,.8); [587.33,739.99,880,1174.66,1479.98].forEach((f,i)=>setTimeout(()=>bell(f,.07,4.5),500+i*260)); }
+function whoosh(){ noiseHit(1.1,500,1500,.06,1.5); }
+function boom(sign){
+  if(!AU.on)return; const ctx=AU.ctx,c=ctx.currentTime;
+  const o=ctx.createOscillator(); o.type='sine'; const g=ctx.createGain();
+  o.frequency.setValueAtTime(sign>0?44:98,c); o.frequency.exponentialRampToValueAtTime(sign>0?92:36,c+1.4);
+  g.gain.setValueAtTime(0,c); g.gain.linearRampToValueAtTime(.6,c+.03); g.gain.exponentialRampToValueAtTime(.0001,c+2.3);
+  o.connect(g); g.connect(AU.fx); o.start(c); o.stop(c+2.4);
+  bell(sign>0?587.33:233.08,.06,2.8);
+}
+function powerDown(){
+  if(!AU.on)return; const ctx=AU.ctx,c=ctx.currentTime;
+  const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(190,c); o.frequency.exponentialRampToValueAtTime(26,c+2.8);
+  const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(1400,c); lp.frequency.exponentialRampToValueAtTime(90,c+2.8);
+  const g=ctx.createGain(); g.gain.setValueAtTime(.16,c); g.gain.exponentialRampToValueAtTime(.0001,c+3);
+  o.connect(lp); lp.connect(g); g.connect(AU.fx); o.start(c); o.stop(c+3.1);
+}
+const CHIME=[1174.66,987.77,880,739.99,659.25,587.33,493.88,440,369.99,329.63];
+const FROST=[1567.98,1318.51,1174.66,987.77,1760];
+let auAcc=0;
+function auUpdate(){
+  if(!AU.on||!AU.ctx)return; const c=AU.ctx.currentTime, v=Vc; const ig=CITY.igniteT<0?.35:1;
+  const act=clamp(v.lit*.55+v.traffic*.45,0,1);
+  AU.lp.frequency.setTargetAtTime(150+act*640+Math.max(0,v.warm)*1300+v.dawn*600-v.dim*110,c,.5);
+  AU.lfoG.gain.setTargetAtTime(Math.max(0,v.warm-.35)*420,c,.6);
+  const up=clamp(1-v.black*.9-v.dim*.8,.15,1);
+  const G=[.05,.04,.028,.022,.018,.012];
+  AU.voices.forEach((vo,i)=>vo.g.gain.setTargetAtTime(G[i]*ig*(i>=2?up:1)*(1+v.dawn*.25),c,.8));
+  const cold=v.warm<-.35||v.black>.3;
+  const third=cold?174.61:185, sev=cold?261.63:277.18;
+  [[3,third],[5,sev]].forEach(([i,f])=>{AU.voices[i].o1.frequency.setTargetAtTime(f,c,1.4);AU.voices[i].o2.frequency.setTargetAtTime(f,c,1.4);});
+  AU.voices[5].o2.detune.setTargetAtTime(6+Math.max(0,v.warm)*60,c,.6);
+  AU.noiseG.gain.setTargetAtTime(.055*v.traffic*ig*(.6+v.speed*.4),c,.5);
+  if(v.snow>.3&&Math.random()<.05*v.snow)bell(FROST[(Math.random()*FROST.length)|0],.03*v.snow,4);
+}
+$('#sound').addEventListener('click',()=>auSet(!AU.on));
+
+/* ================= 点亮 ================= */
+function ignite(withSound){
+  if(CITY.igniteT>=0)return;
+  CITY.igniteT=now();
+  document.body.classList.add('lit');
+  if(withSound){auSet(true); setTimeout(swell,60);}
+  $('#ignite span').textContent='城市已点亮';
+}
+$('#ignite').addEventListener('click',()=>{ if(CITY.igniteT<0)ignite(true); else{ if(!AU.on)auSet(true); $('#gdp .card').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});} });
+
+/* ================= 失业组件 ================= */
+const LF=62, dotsEl=$('#dots'), dots=[];
+for(let i=0;i<100;i++){const d=document.createElement('i');dotsEl.appendChild(d);dots.push(d);}
+function setP(inp){const p=(inp.value-inp.min)/(inp.max-inp.min)*100; inp.style.setProperty('--p',p+'%');}
+function renderJobs(){
+  const n=W.jobsN, rate=n/LF*100;
+  dots.forEach((d,i)=>{d.className=i<LF-n?'emp':i<LF?'unemp':'out';});
+  $('#jobsEmp').textContent=LF-n; $('#jobsUn').textContent=n; $('#jobsNV').textContent=n+' 人';
+  $('#jobsRate').textContent=`${n} ÷ 62 = ${rate.toFixed(1)}%`;
+  $('#jobsNote').textContent=rate<6.5?'接近自然失业率，大多数窗都亮着。':rate<11?'失业明显上升，城里开始出现成片的暗窗。':'大规模失业：整片街区陷入黑暗。经济大萧条时，美国失业率一度接近 25%。';
+}
+$('#jobsN').addEventListener('input',e=>{W.jobsN=+e.target.value;setP(e.target);renderJobs();});
+
+/* ================= 通胀组件 ================= */
+function renderInfl(){
+  const pi=W.pi,n=W.years,v=100/Math.pow(1+pi/100,n);
+  $('#piV').textContent=pi.toFixed(1)+'%'; $('#yrV').textContent=n+' 年';
+  $('#inflOut').innerHTML=`今天的 100 元，${n} 年后只能买到现在 <b>${v.toFixed(1)} 元</b> 的东西。`;
+  $('#r72').textContent=pi>0?`72 法则：72 ÷ ${pi.toFixed(1).replace('.0','')} ≈ ${(72/pi).toFixed(1)} 年，购买力减半。`:'物价不涨，购买力不变。';
+  $('#money').style.transform=`scale(${Math.sqrt(v/100).toFixed(4)})`;
+}
+$('#piR').addEventListener('input',e=>{W.pi=+e.target.value;setP(e.target);renderInfl();});
+$('#yrR').addEventListener('input',e=>{W.years=+e.target.value;setP(e.target);renderInfl();});
+
+/* ================= CPI 组件 ================= */
+const BASKET=[
+ {n:'猪肉',w:1.5,min:-40,max:100,v:40,d:40},
+ {n:'其他食品烟酒',w:27.5,min:-10,max:20,v:1,d:1},
+ {n:'居住',w:23,min:-10,max:20,v:.5,d:.5},
+ {n:'交通通信',w:12,min:-10,max:20,v:-1,d:-1},
+ {n:'教育文化娱乐',w:11,min:-10,max:20,v:1.5,d:1.5},
+ {n:'医疗保健',w:10,min:-10,max:20,v:1,d:1},
+ {n:'衣着',w:6,min:-10,max:20,v:1,d:1},
+ {n:'生活用品及服务',w:6,min:-10,max:20,v:.5,d:.5},
+ {n:'其他用品及服务',w:3,min:-10,max:20,v:2,d:2}
+];
+const bEl=$('#basket');
+BASKET.forEach((b,i)=>{
+  const r=document.createElement('div'); r.className='brow'+(i===0?' pork':'');
+  r.innerHTML=`<span class="bn">${b.n}<small>${b.w}%</small></span><input type="range" id="bk${i}" min="${b.min}" max="${b.max}" step="0.5" value="${b.v}" aria-label="${b.n}价格涨跌幅"><span class="bd" id="bd${i}"></span><span class="bc" id="bc${i}"></span>`;
+  bEl.appendChild(r);
+  const inp=r.querySelector('input'); b.inp=inp;
+  inp.addEventListener('input',()=>{b.v=+inp.value;renderCPI();});
+});
+function renderCPI(){
+  let sum=0, top=null;
+  BASKET.forEach((b,i)=>{const c=b.w*b.v/100; b.c=c; sum+=c; $('#bd'+i).textContent=sgn(b.v,1)+'%'; $('#bc'+i).textContent=sgn(c,2); setP(b.inp); if(!top||Math.abs(c)>Math.abs(top.c))top=b;});
+  W.cpi=sum;
+  $('#cpiIdx').textContent=(100+sum).toFixed(1);
+  $('#cpiYoy').textContent='同比 '+sgn(sum,1)+'%';
+  $('#thermoMark').style.left=clamp((sum+3)/11*100,0,100)+'%';
+  const p=BASKET[0];
+  let s=`猪肉价格${p.v>=0?'上涨':'下跌'} ${Math.abs(p.v)}%，乘以 1.5% 的权重，只让 CPI 变动 ${sgn(p.c,2)} 个百分点。`;
+  if(top!==p&&Math.abs(top.c)>.05)s+=`眼下贡献最大的是「${top.n}」：${sgn(top.v,1)}% × ${top.w}% = ${sgn(top.c,2)}。`;
+  if(sum<0)s+='整只篮子在变便宜，城市开始结冰。';
+  else if(sum>4)s+='CPI 超过 4%，城市明显发烧。';
+  $('#cpiInsight').textContent=s;
+}
+const PRESETS={
+  pig:()=>{BASKET.forEach(b=>b.v=b.d);BASKET[0].v=60;},
+  rent:()=>{BASKET.forEach(b=>b.v=b.d);BASKET[2].v=8;},
+  oil:()=>{BASKET.forEach(b=>b.v=b.d);BASKET[3].v=15;BASKET[1].v=3;},
+  fall:()=>{BASKET.forEach(b=>b.v=-3);BASKET[0].v=-10;},
+  base:()=>{BASKET.forEach(b=>b.v=b.d);}
+};
+$$('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>{PRESETS[btn.dataset.preset]();BASKET.forEach(b=>b.inp.value=b.v);renderCPI();}));
+
+/* ================= 通缩螺旋 ================= */
+const sNodes=$$('#spiral .node'); let sIdx=0;
+setInterval(()=>{sNodes.forEach((n,i)=>n.classList.toggle('hot',i===sIdx));sIdx=(sIdx+1)%sNodes.length;},1100);
+
+/* ================= 经济周期 SVG ================= */
+(function(){
+  const NS='http://www.w3.org/2000/svg', svg=$('#cycle');
+  const el=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;svg.appendChild(e);return e;};
+  const P=t=>{const x=24+472*t, base=158-92*t, y=base-36*Math.sin(2*Math.PI*1.15*t-.6);return[x,y];};
+  const tPeak=(Math.PI/2+.6)/(2*Math.PI*1.15), tTr=(3*Math.PI/2+.6)/(2*Math.PI*1.15);
+  const [px]=P(tPeak),[tx]=P(tTr);
+  el('rect',{x:px,y:8,width:tx-px,height:184,fill:'rgba(185,168,224,.1)'});
+  el('text',{x:(px+tx)/2,y:186,'text-anchor':'middle',class:'ax'},'衰退期');
+  el('line',{x1:24,y1:158,x2:496,y2:66,stroke:'rgba(236,230,218,.3)','stroke-dasharray':'3 5'});
+  el('text',{x:496,y:58,'text-anchor':'end',class:'ax'},'长期趋势');
+  let d=''; for(let i=0;i<=120;i++){const[x,y]=P(i/120);d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}
+  const path=el('path',{d,fill:'none',stroke:'#b9a8e0','stroke-width':2.2});
+  const lab=[[.12,'扩张',-14],[tPeak,'顶峰',-14],[.53,'衰退',-14],[tTr,'谷底',22],[.93,'复苏',-14]];
+  lab.forEach(([t,s,o])=>{const[x,y]=P(t);el('circle',{cx:x,cy:y,r:3,fill:'#ece6da'});el('text',{x,y:y+o,'text-anchor':'middle',class:'lbl2'},s);});
+  const dot=el('circle',{r:6,fill:'#ffc46b',style:'filter:drop-shadow(0 0 6px #ffc46b)'});
+  const L=path.getTotalLength(); let t0=performance.now();
+  (function mv(){const k=((performance.now()-t0)/9000)%1;const p=path.getPointAtLength(k*L);dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);requestAnimationFrame(mv);})();
+})();
+(function(){
+  const NS='http://www.w3.org/2000/svg', svg=$('#bars');
+  const el=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;svg.appendChild(e);return e;};
+  const vals=[1.4,1.6,1.2,.8,.3,-.6,-1.2,.4], z=82, k=28, bw=40, gap=21, x0=30;
+  el('line',{x1:x0-8,y1:z,x2:512,y2:z,stroke:'rgba(236,230,218,.35)'});
+  el('text',{x:x0-12,y:z+4,'text-anchor':'end',class:'ax'},'0');
+  el('text',{x:x0-12,y:z-k+4,'text-anchor':'end',class:'ax'},'1%');
+  el('line',{x1:x0-8,y1:z-k,x2:512,y2:z-k,stroke:'rgba(236,230,218,.08)'});
+  vals.forEach((v,i)=>{
+    const x=x0+i*(bw+gap), h=Math.abs(v)*k;
+    el('rect',{x,y:v>=0?z-h:z,width:bw,height:h,fill:v>=0?'rgba(255,196,107,.75)':'#ff6a3d'});
+    el('text',{x:x+bw/2,y:v>=0?z-h-6:z+h+13,'text-anchor':'middle',class:'ax'},(v>0?'+':'')+neg(v.toFixed(1)));
+    el('text',{x:x+bw/2,y:150,'text-anchor':'middle',class:'ax'},'Q'+(i%4+1));
+  });
+  el('text',{x:x0+1.5*(bw+gap)+bw/2,y:166,'text-anchor':'middle',class:'ax'},'第一年');
+  el('text',{x:x0+5.5*(bw+gap)+bw/2,y:166,'text-anchor':'middle',class:'ax'},'第二年');
+  const bx1=x0+5*(bw+gap), bx2=x0+6*(bw+gap)+bw;
+  el('path',{d:`M${bx1} 38V30H${bx2}V38`,fill:'none',stroke:'#ff6a3d'});
+  el('text',{x:(bx1+bx2)/2,y:22,'text-anchor':'middle',class:'lbl2',style:'fill:#ff6a3d'},'连续两季负增长');
+})();
+
+/* ================= 货币政策组件 ================= */
+const chainUp=['降息','借钱更便宜','投资、消费增加','需求上升','就业增加 · 物价上行'];
+const chainDn=['加息','借钱更贵','投资、消费减少','需求降温','物价回落 · 就业承压'];
+let chainTimers=[];
+function runChain(dir){
+  const ol=$('#chain'); chainTimers.forEach(clearTimeout); chainTimers=[];
+  const words=dir<0?chainUp:chainDn; ol.classList.toggle('down',dir>0);
+  const lis=$$('li',ol); lis.forEach((li,i)=>{li.textContent=words[i];li.classList.remove('go');});
+  lis.forEach((li,i)=>chainTimers.push(setTimeout(()=>li.classList.add('go'),250+i*380)));
+}
+function monetary(dir){
+  const r0=W.rMon; W.rMon=clamp(+(W.rMon+dir*.5).toFixed(2),0,8);
+  if(W.rMon===r0){ $('#monRate').animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'none'}],{duration:240}); return; }
+  CITY.pulses.push({t0:now(),sign:dir<0?1:-1,s:1});
+  moneyT=now(); moneySign=dir<0?1:-1;
+  $('#monRate').textContent=W.rMon.toFixed(2)+'%';
+  runChain(dir); boom(dir<0?1:-1);
+}
+$('#monCut').addEventListener('click',()=>monetary(-1));
+$('#monHike').addEventListener('click',()=>monetary(1));
+
+/* ================= 财政政策组件 ================= */
+const HANDS=['政府 → 建筑工人','工人 → 小吃店','小吃店 → 菜农','菜农 → 服装店','服装店 → 理发师','理发师 → 书店','书店 → 出租车','出租车 → 电影院','电影院 → 面包店','面包店 → ……'];
+let fisRunning=false, fisTimers=[];
+function renderMpc(){const m=W.mpc;$('#mpcV').textContent=m.toFixed(2);$('#mpcK').textContent=m.toFixed(2);$('#multV').textContent=(1/(1-m)).toFixed(1);}
+$('#mpc').addEventListener('input',e=>{W.mpc=+e.target.value;setP(e.target);renderMpc();});
+function launchFiscal(){
+  if(fisRunning)return; fisRunning=true; CITY.built=true;
+  const mpc=W.mpc, R=$('#rounds'); R.innerHTML=''; let sum=0;
+  $('#fisGo').disabled=true;
+  for(let k=0;k<10;k++){
+    fisTimers.push(setTimeout(()=>{
+      const amt=Math.pow(mpc,k); sum+=amt;
+      const row=document.createElement('div'); row.className='rd';
+      row.innerHTML=`<span>第 ${k+1} 手 · ${HANDS[k]}</span><i style="width:${(amt*100).toFixed(1)}%"></i><b>${amt.toFixed(2)}</b>`;
+      R.appendChild(row);
+      $('#multSum').innerHTML=`累计带动需求：<em>${sum.toFixed(2)} 元</em>　理论上限 ${(1/(1-mpc)).toFixed(1)} 元`;
+      CITY.ripples.push({t0:now(),amp:.3+.7*amt});
+      bell(CHIME[k],.11*(.25+amt),3.2);
+      W.fisK=clamp(sum/4.5,0,1);
+      if(k===9){fisRunning=false;$('#fisGo').disabled=false;$('#fisGo').textContent='再投 1 元';}
+    },k*480));
+  }
+}
+$('#fisGo').addEventListener('click',launchFiscal);
+
+/* ================= 关系网 ================= */
+(function(){
+  const NS='http://www.w3.org/2000/svg', svg=$('#webSvg');
+  const el=(p,t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;p.appendChild(e);return e;};
+  const N={
+    mon:{x:130,y:42,t:'货币政策',c:'#5fd4ff'},fis:{x:590,y:42,t:'财政政策',c:'#ffd36b'},
+    ad:{x:360,y:138,t:'总需求',c:'#ffc46b'},
+    gdp:{x:200,y:248,t:'GDP（产出）',c:'#ffc46b'},px:{x:520,y:248,t:'物价 · CPI',c:'#ffa94d'},
+    un:{x:96,y:368,t:'失业率',c:'#f2a07e'},rec:{x:282,y:368,t:'衰退',c:'#b9a8e0'},
+    inf:{x:450,y:368,t:'通货膨胀',c:'#ff6a3d'},def:{x:628,y:368,t:'通货紧缩',c:'#a9d2ff'}
+  };
+  for(const k in N){const n=N[k];let w=30;for(const ch of n.t)w+=/[一-鿿（）·]/.test(ch)?14.5:8;n.w=w;n.h=36;}
+  const E=[['mon','ad','利率 · 信贷'],['fis','ad','支出 · 税收'],['ad','gdp','带动产出'],['ad','px','需求拉动'],['gdp','un','奥肯定律（反向）'],['gdp','rec','持续下滑'],['px','inf','持续上涨'],['px','def','持续下跌'],['un','inf','菲利普斯曲线（短期此消彼长）','curve']];
+  const defs=el(svg,'defs',{}); const mk=el(defs,'marker',{id:'arW',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:6,markerHeight:6,orient:'auto-start-reverse'}); el(mk,'path',{d:'M0 0L10 5L0 10z',fill:'rgba(236,230,218,.55)'});
+  const gE=el(svg,'g',{}), gL=el(svg,'g',{}), gN=el(svg,'g',{});
+  const clip=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y;const t=Math.min(Math.abs(dx)>1e-6?(b.w/2+6)/Math.abs(dx):1e9,Math.abs(dy)>1e-6?(b.h/2+6)/Math.abs(dy):1e9);return[b.x-dx*t,b.y-dy*t];};
+  const edges=[];
+  E.forEach(([a,b,lab,type])=>{
+    const A=N[a],B=N[b]; let path,lx,ly;
+    if(type==='curve'){path=`M${A.x} ${A.y+A.h/2+4}Q${(A.x+B.x)/2} 470 ${B.x} ${B.y+B.h/2+6}`;lx=(A.x+B.x)/2;ly=436;}
+    else{const[x1,y1]=clip(B,A),[x2,y2]=clip(A,B);path=`M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;lx=(x1+x2)/2;ly=(y1+y2)/2-6;}
+    const p=el(gE,'path',{d:path,class:'edge','marker-end':'url(#arW)'}); if(type==='curve')p.setAttribute('marker-start','url(#arW)');
+    const t=el(gL,'text',{x:lx,y:ly,'text-anchor':'middle',class:'elab'},lab);
+    edges.push({a,b,p,t});
+  });
+  for(const k in N){
+    const n=N[k]; const g=el(gN,'g',{class:'nd',tabindex:0,role:'button','aria-label':n.t,style:'color:'+n.c});
+    el(g,'rect',{x:n.x-n.w/2,y:n.y-n.h/2,width:n.w,height:n.h,stroke:n.c});
+    el(g,'text',{x:n.x,y:n.y+1},n.t);
+    const on=()=>{svg.classList.add('focus');edges.forEach(e=>{const h=e.a===k||e.b===k;e.p.classList.toggle('hot',h);e.t.classList.toggle('hot',h);});};
+    const off=()=>{svg.classList.remove('focus');};
+    g.addEventListener('mouseenter',on);g.addEventListener('mouseleave',off);g.addEventListener('focus',on);g.addEventListener('blur',off);
+  }
+})();
+
+/* ================= 宏观沙盘 ================= */
+const M={};
+function simReset(){
+  Object.assign(M,{cr:0,os:0,q:1,y:0,yPrev:0,pi:2,pe:2,u:5,i:3,f:0,d:0,s:0,debt:60,neg:0,streak:0,best:M.best||0,rec:false,hist:[],qs:[4.5,4.5,4.5,4.5],acc:0,pause:false,speed:1,lastRate:3,lastFis:0});
+  for(let k=0;k<40;k++)M.hist.push({g:4.5+(Math.random()-.5)*.6,c:2+(Math.random()-.5)*.4,u:5+(Math.random()-.5)*.3});
+  const r=$('#simRate'),f=$('#simFis'); r.value=3; f.value=0; setP(r); setP(f);
+  $('#simPause').textContent='暂停'; $('#simFast').textContent='加速 ×3';
+  renderSim();
+}
+const yoy=()=>M.qs.reduce((a,b)=>a+b,0)/M.qs.length;
+function simStep(){
+  M.yPrev=M.y;
+  const r=M.i-M.pe;
+  M.y=clamp(.78*M.y-.3*(r-1)+.32*M.f+M.d+(Math.random()-.5)*.3,-14,9);
+  M.pi=clamp(M.pe+.3*M.y+M.s+(Math.random()-.5)*.16,-6,40);
+  M.pe=.82*(M.pe+.35*(M.pi-M.pe))+.18*2;
+  M.u=clamp(M.u+.4*((5-.5*M.y)-M.u),2.6,30);
+  M.d*=.8; M.s*=.72;
+  if(M.cr>0){M.d-=.95;M.cr--;}
+  if(M.os>0){M.s+=.9;M.d-=.55;M.os--;}
+  const qg=4.5+4*(M.y-M.yPrev);
+  M.qs.push(qg); if(M.qs.length>4)M.qs.shift();
+  const nominal=yoy()+M.pi;
+  M.debt=clamp(M.debt+(3.2+M.f+Math.max(0,-M.y)*.4)/4-M.debt*(nominal/100)/4,0,400);
+  M.neg=qg<0?M.neg+1:0; M.rec=M.neg>=2;
+  const ok=Math.abs(M.pi-2)<=1.2&&M.u<=6.2&&yoy()>=2;
+  M.streak=ok?M.streak+1:0; M.best=Math.max(M.best,M.streak);
+  M.hist.push({g:yoy(),c:M.pi,u:M.u}); if(M.hist.length>48)M.hist.shift();
+  M.q++;
+}
+function simHud(){return{g:yoy(),c:M.pi,u:M.u,r:M.i,rec:M.rec};}
+function simVisual(){
+  const y=M.y,pi=M.pi,u=M.u;
+  return{lit:litFromU(u),warm:warmFromPi(pi),traffic:clamp(.8+y*.06,.15,1),speed:clamp(1+y*.07+Math.max(0,pi-3)*.06,.3,2.4),
+    heat:clamp((pi-4)/9,0,1),ember:clamp((pi-3)/7,0,1),snow:clamp(-pi/1.5,0,1),
+    black:clamp(-y/8,0,.6),dim:clamp(-y/11,0,.5),fog:.15+clamp(-y/12,0,.45),desat:clamp(-y/9,0,.6),
+    cb:.25,gov:clamp(Math.abs(M.f)/3,0,1)*.7,build:1};
+}
+function classify(h){
+  if(h.tag)return h.tag;
+  if(h.c>10)return['恶性通胀','ember'];
+  if(h.rec)return['技术性衰退','dim'];
+  if(h.c>4&&h.g<1.5)return['滞胀','ember'];
+  if(h.g<0)return['衰退','dim'];
+  if(h.c<0)return['通货紧缩','frost'];
+  if(h.c>4)return['通胀过热','ember'];
+  if(h.u>7)return['就业疲弱','dim'];
+  if(h.g>7.5)return['过热','ember'];
+  return['稳健','ok'];
+}
+function simHintText(){
+  const g=yoy();
+  if(M.pi>10)return '物价失控。需要大幅加息，并收紧财政，先把通胀预期压下去。';
+  if(M.pi>4&&g<1.5)return '滞胀两难：加息压通胀会让失业更重，降息救就业又会火上浇油。1970 年代的美联储最终选择了大幅加息。';
+  if(M.i<=0.01&&M.pi<1)return '利率已经降到零，货币政策像在推一根绳子。试试扩大财政支出。';
+  if(M.rec)return '连续两个季度负增长：技术性衰退。降息、扩大政府支出都能托底。';
+  if(M.pi<0)return '物价在下跌，城市结冰了。宽松的货币和财政政策可以提振需求。';
+  if(M.pi>4)return '通胀过热，城市在发烧。考虑加息，或者减少政府支出。';
+  if(M.debt>100)return '政府债务已超过 GDP 的 100%，财政扩张的空间在收窄。';
+  if(M.u>7)return '失业偏高，需求不足。可以适当降息或增加支出。';
+  if(M.streak>=8)return '干得漂亮：物价稳定、就业充分、增长平稳。这正是央行和政府追求的「软着陆」。';
+  return '城市运转平稳。试着把利率降到 0 并保持一阵，看看会发生什么。';
+}
+let lastHint='';
+function renderSim(){
+  const g=yoy(), st=classify(simHud());
+  const chip=$('#simState'); chip.textContent=st[0]; chip.className='chip '+(st[1]==='ok'?'':st[1]);
+  $('#simQ').textContent=`第 ${M.q} 季度`;
+  $('#simStreak').innerHTML=`连续达标 <b>${M.streak}</b> 季 · 最佳 ${M.best}`;
+  $('#sG').textContent=f1(g)+'%'; $('#sC').textContent=f1(M.pi)+'%'; $('#sU').textContent=f1(M.u)+'%'; $('#sD').textContent=Math.round(M.debt)+'%';
+  $('#sG').className=g<0?'hot':''; $('#sC').className=M.pi>4?'hot':M.pi<0?'cold':''; $('#sU').className=M.u>7?'hot':'';
+  const h=simHintText(); if(h!==lastHint){lastHint=h;$('#simHint').textContent=h;}
+  drawChart();
+}
+function drawChart(){
+  const cv=$('#simChart'), w=cv.clientWidth, h=cv.clientHeight; if(!w)return;
+  const d=Math.min(2,devicePixelRatio||1);
+  if(cv.width!==Math.round(w*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d);}
+  const g=cv.getContext('2d'); g.setTransform(d,0,0,d,0,0); g.clearRect(0,0,w,h);
+  const lo=-6,hi=14,Y=v=>6+(hi-clamp(v,lo,hi))/(hi-lo)*(h-12), x0=30;
+  g.fillStyle='rgba(255,196,107,.1)'; g.fillRect(x0,Y(3),w-x0,Y(1)-Y(3));
+  g.font='10px "JetBrains Mono", monospace'; g.textAlign='right'; g.textBaseline='middle';
+  [-5,0,5,10].forEach(v=>{g.strokeStyle=v===0?'rgba(236,230,218,.3)':'rgba(236,230,218,.07)';g.beginPath();g.moveTo(x0,Y(v));g.lineTo(w,Y(v));g.stroke();g.fillStyle='rgba(236,230,218,.4)';g.fillText((v<0?'−'+Math.abs(v):v)+'%',x0-5,Y(v));});
+  const H=M.hist.slice(-40), X=i=>x0+4+(w-x0-10)*(i/39);
+  [['u','#5fd4ff'],['c','#ff6a3d'],['g','#ffc46b']].forEach(([k,c])=>{
+    g.strokeStyle=c; g.lineWidth=1.7; g.beginPath();
+    H.forEach((p,i)=>{const x=X(i+40-H.length),y=Y(p[k]);i?g.lineTo(x,y):g.moveTo(x,y);}); g.stroke();
+    const p=H[H.length-1]; g.fillStyle=c; g.beginPath(); g.arc(X(39),Y(p[k]),3,0,7); g.fill();
+  });
+}
+$('#simRate').addEventListener('input',e=>{M.i=+e.target.value;setP(e.target);$('#simRateV').textContent=M.i.toFixed(2)+'%';});
+$('#simRate').addEventListener('change',()=>{const d=M.i-M.lastRate;if(Math.abs(d)>=.25){CITY.pulses.push({t0:now(),sign:d<0?1:-1,s:clamp(Math.abs(d)/2,.4,1.2)});moneyT=now();moneySign=d<0?1:-1;boom(d<0?1:-1);M.lastRate=M.i;}});
+const fisLabel=f=>f===0?'中性':f>0?`扩张 +${f}%`:`紧缩 −${Math.abs(f)}%`;
+$('#simFis').addEventListener('input',e=>{M.f=+e.target.value;setP(e.target);$('#simFisV').textContent=fisLabel(M.f);});
+$('#simFis').addEventListener('change',()=>{const d=M.f-M.lastFis;if(d>0){for(let k=0;k<4;k++)setTimeout(()=>{CITY.ripples.push({t0:now(),amp:Math.pow(.7,k)});bell(CHIME[k+2],.08*Math.pow(.7,k),3);},k*420);}M.lastFis=M.f;});
+$$('[data-shock]').forEach(b=>b.addEventListener('click',()=>{
+  const s=b.dataset.shock;
+  if(s==='crisis'){M.d-=.95;M.cr=3;M.pe-=.2;powerDown();}
+  if(s==='oil'){M.s+=2.4;M.os=3;M.d-=1.1;noiseHit(1.6,900,200,.12);bell(155.56,.08,3);}
+  if(s==='boom'){M.d+=1.7;swell();}
+  M.acc=1.2;
+}));
+$('#simPause').addEventListener('click',e=>{M.pause=!M.pause;e.target.textContent=M.pause?'继续':'暂停';});
+$('#simFast').addEventListener('click',e=>{M.speed=M.speed>1?1:3;e.target.textContent=M.speed>1?'正常速度':'加速 ×3';});
+$('#simReset').addEventListener('click',simReset);
+$('#toSand').addEventListener('click',()=>$('#sandbox .card').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'}));
+$('#toTop').addEventListener('click',()=>scrollTo({top:0,behavior:RM?'auto':'smooth'}));
+
+/* ================= 章节切换 ================= */
+const flags={};
+function enter(i){
+  const prev=active; active=i; CITY.chapter=i;
+  SECTIONS.forEach((s,k)=>s.classList.toggle('on',k===i));
+  const ch=CH[i];
+  CITY.cam=Object.assign({},CAMS[ch.cam]); CITY.orbit=!!CAMS[ch.cam].orbit;
+  CITY.viewShift=(innerWidth>860&&!ch.center&&i>0)?.16:0;
+  CITY.sandbox=ch.id==='sand';
+  $$('#rail a').forEach(a=>a.classList.toggle('on',+a.dataset.i===i));
+  if(i>0&&CITY.igniteT<0)ignite(false);
+  if(prev!==i)whoosh();
+  if(ch.id==='rec'&&prev!==i)setTimeout(()=>{if(active===i)powerDown();},250);
+  if(ch.id==='mon'&&!flags.mon){flags.mon=true;setTimeout(()=>{if(active===i)monetary(-1);},1500);}
+  if(ch.id==='fis'&&!flags.fis){flags.fis=true;setTimeout(()=>{if(active===i)launchFiscal();},1700);}
+  if(ch.id==='sand')drawChart();
+}
+let qd=false;
+function detect(){
+  const mid=innerHeight*.5; let idx=active;
+  for(let i=0;i<SECTIONS.length;i++){const r=SECTIONS[i].getBoundingClientRect();if(r.top<=mid&&r.bottom>mid){idx=i;break;}}
+  if(idx!==active)enter(idx);
+  if(CITY.igniteT<0&&scrollY>innerHeight*.2)ignite(false);
+}
+addEventListener('scroll',()=>{if(!qd){qd=true;requestAnimationFrame(()=>{qd=false;detect();});}},{passive:true});
+addEventListener('resize',()=>{CITY.viewShift=(innerWidth>860&&!CH[active].center&&active>0)?.16:0;drawChart();});
+$$('#rail a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const s=$(a.getAttribute('href')+' .card');s.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});}));
+
+/* ================= 仪表与主循环 ================= */
+const Hc={g:5,c:2,u:5,r:3};
+const hG=$('#hG'),hC=$('#hC'),hU=$('#hU'),hR=$('#hR'),hS=$('#hudState');
+let lastChip='';
+let last=now();
+function tick(){
+  const t=now(), dt=Math.min(.1,t-last); last=t;
+  const ch=CH[active];
+  if(ch.id==='sand'&&!M.pause){M.acc+=dt*M.speed;if(M.acc>1.15){M.acc=0;simStep();renderSim();}}
+  const tgt=Object.assign({},BASE,ch.state());
+  if(CITY.built)tgt.build=1;
+  const ma=Math.max(0,1-(t-moneyT)/3.5); tgt.money=ma*moneySign;
+  for(const k of KEYS){V[k]=tgt[k];const r=RATE[k]||1.3;Vc[k]+=(V[k]-Vc[k])*(1-Math.exp(-dt*r));}
+  const h=ch.hud(), kk=1-Math.exp(-dt*3);
+  for(const k of ['g','c','u','r'])Hc[k]+=(h[k]-Hc[k])*kk;
+  hG.textContent=f1(Hc.g)+'%'; hC.textContent=f1(Hc.c)+'%'; hU.textContent=f1(Hc.u)+'%'; hR.textContent=Math.max(0,Hc.r).toFixed(2)+'%';
+  hG.className='v'+(Hc.g<0?' hot':''); hC.className='v'+(Hc.c>4?' hot':Hc.c<0?' cold':''); hU.className='v'+(Hc.u>7?' bad':'');
+  const st=classify(h); const key=st.join();
+  if(key!==lastChip){lastChip=key;hS.textContent=st[0];hS.className='chip '+(st[1]==='ok'?'':st[1]);}
+  auAcc+=dt; if(auAcc>.12){auAcc=0;auUpdate();}
+  requestAnimationFrame(tick);
+}
+
+/* ================= 初始化 ================= */
+['jobsN','piR','yrR','mpc'].forEach(id=>setP($('#'+id)));
+renderJobs(); renderInfl(); renderCPI(); renderMpc(); simReset();
+SECTIONS[0].classList.add('on');
+const hash=(location.hash||'').slice(1);
+if(hash&&$('#'+hash)&&hash!=='intro'){ignite(false);setTimeout(()=>{$('#'+hash+' .card')&&$('#'+hash+' .card').scrollIntoView({block:'start'});detect();},60);}
+detect();
+requestAnimationFrame(tick);
+setTimeout(()=>{if(!CITY.glReady)document.documentElement.classList.add('no-gl');},12000);
+})();
+</script>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const CITY = window.CITY;
+const canvas = document.getElementById('stage');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+} catch (err) { document.documentElement.classList.add('no-gl'); throw err; }
+const small = Math.min(innerWidth, innerHeight) < 640;
+let dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 1.75);
+renderer.setPixelRatio(dpr);
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.setClearColor(0x05070d, 1);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.5, 3200);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+/* ---------- 共享 uniform ---------- */
+const v4 = n => Array.from({ length: n }, () => new THREE.Vector4());
+const U = {
+  uTime: { value: 0 }, uLit: { value: .8 }, uWarm: { value: 0 }, uIgnite: { value: 0 }, uBlack: { value: 0 }, uDim: { value: 0 },
+  uBuild: { value: 0 }, uCB: { value: 0 }, uGov: { value: 0 }, uDawn: { value: 0 },
+  uFogDensity: { value: .004 }, uFogColor: { value: new THREE.Color(.05, .04, .05) },
+  uPulse: { value: v4(4) }, uRipple: { value: v4(8) }, uGovPos: { value: new THREE.Vector2() },
+  uP: { value: 5.6 }, uHalfStreet: { value: .65 },
+  uPhase: { value: 0 }, uTraffic: { value: 0 }, uColorMode: { value: 0 }, uMoney: { value: 0 }, uPx: { value: 500 },
+  uEmber: { value: 0 }, uSnow: { value: 0 }, uStars: { value: 1 },
+  uHorizon: { value: new THREE.Color() }, uZenith: { value: new THREE.Color() }, uGlyph: { value: null }
+};
+
+/* ---------- GLSL 公共函数 ---------- */
+const COMMON = /* glsl */`
+uniform float uTime, uLit, uWarm, uIgnite, uBlack, uDim, uBuild, uCB, uGov, uDawn, uFogDensity;
+uniform vec3 uFogColor;
+uniform vec4 uPulse[4];
+uniform vec4 uRipple[8];
+uniform vec2 uGovPos;
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float noise2(vec2 p){ vec2 i = floor(p); vec2 f = fract(p); vec2 u = f*f*(3.-2.*f);
+  return mix(mix(hash12(i), hash12(i+vec2(1.,0.)), u.x), mix(hash12(i+vec2(0.,1.)), hash12(i+vec2(1.,1.)), u.x), u.y); }
+float cityR(vec2 p){ float a = atan(p.y, p.x); return 62. + 8.*sin(3.*a + 1.) + 5.*sin(7.*a + .3); }
+float riverZ(float x){ return -9. + 5.*sin(.045*x + .6); }
+vec2 pulseField(vec2 xz){
+  float d = length(xz); float acc = 0.; float sg = 0.;
+  for(int k = 0; k < 4; k++){
+    vec4 P = uPulse[k];
+    if(P.w < .5) continue;
+    float t = uTime - P.x;
+    if(t < 0. || t > 4.) continue;
+    float r = P.y > 0. ? t * 30. : max(0., 112. - t * 30.);
+    float q = (d - r) / 2.6;
+    float ring = exp(-q*q) * (1. - t / 4.) * P.z;
+    acc += ring; sg += ring * P.y;
+  }
+  return vec2(acc, sg);
+}
+float rippleField(vec2 xz){
+  float d = length(xz - uGovPos); float acc = 0.;
+  for(int k = 0; k < 8; k++){
+    vec4 R = uRipple[k];
+    if(R.z < .5) continue;
+    float t = uTime - R.x;
+    if(t < 0. || t > 4.6) continue;
+    float q = (d - t * 19.) / 2.;
+    acc += exp(-q*q) * (1. - t / 4.6) * R.y;
+  }
+  return acc;
+}
+vec3 tempShift(vec3 c, float w){
+  if(w > 0.){ c = mix(c, vec3(1., .3, .1), clamp(w * .82, 0., .82)); c *= 1. + w * .55; }
+  else { c = mix(c, vec3(.52, .76, 1.), clamp(-w * .82, 0., .82)); c *= 1. + w * .28; }
+  return c;
+}
+vec3 applyFog(vec3 col, float dist){ float q = uFogDensity * dist; return mix(col, uFogColor, clamp(1. - exp(-q*q), 0., 1.)); }
+`;
+
+/* ---------- 城市生成 ---------- */
+function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rnd = mulberry(20261014);
+const P = 5.6;
+const riverZ = x => -9 + 5 * Math.sin(.045 * x + .6);
+const cityR = (x, z) => { const a = Math.atan2(z, x); return 62 + 8 * Math.sin(3 * a + 1) + 5 * Math.sin(7 * a + .3); };
+const GOV = { x: 2 * P, z: 3 * P };
+U.uGovPos.value.set(GOV.x, GOV.z);
+const B = [];
+const add = (x, z, w, d, h, kind, lot = 0) => B.push({ x, z, w, d, h, kind, lot, seed: rnd() });
+const nearRiver = (x, z, r) => Math.abs(z - riverZ(x)) < 3.45 + r;
+const LOTS = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+const newPts = [];
+for (let gx = -17; gx <= 17; gx++) for (let gz = -17; gz <= 17; gz++) {
+  const cx = gx * P, cz = gz * P;
+  const dist = Math.hypot(cx, cz), Rc = cityR(cx, cz), dn = dist / Rc;
+  if (dn > 1.5) continue;
+  if (gx === 0 && gz === 0) { add(0, 0, 2.3, 2.3, 40, 2); add(0, 0, 4.2, 4.2, 2.6, 2); continue; }
+  if (cx === GOV.x && cz === GOV.z) { add(cx, cz, 4.2, 3.4, 6.2, 3); add(cx, cz, 1.9, 1.9, 10.5, 3); continue; }
+  const ang = Math.atan2(cz, cx);
+  const isNew = ang > .62 && ang < 1.45 && dn > .52 && dn < .97;
+  const pres = dn < 1 ? .96 : Math.max(0, 1 - (dn - 1) / .5) * .5;
+  const hBase = 1.5 + 25 * Math.exp(-dn * dn * 5.2);
+  const kindOf = () => dn < .45 ? (rnd() < .65 ? 1 : 0) : (rnd() < .18 ? 1 : 0);
+  if (isNew) {
+    for (const [sx, sz] of LOTS) {
+      const x = cx + sx * 1.3, z = cz + sz * 1.3;
+      if (nearRiver(x, z, 1.2) || rnd() > .88) continue;
+      add(x, z, 1.45 + rnd() * .2, 1.45 + rnd() * .2, 6 + rnd() * 10, 1, 1); newPts.push([x, z]);
+    }
+    continue;
+  }
+  const r0 = rnd();
+  if (dn < .5 && r0 < .3 && !nearRiver(cx, cz, 2.2)) {
+    let h = hBase * (1.05 + rnd() * .85); if (dn < .3 && rnd() < .25) h *= 1.45;
+    add(cx, cz, 2.6 + rnd() * 1.1, 2.6 + rnd() * 1.1, Math.min(h, 54), 1); continue;
+  }
+  if (r0 < .52) {
+    const ax = rnd() < .5;
+    for (const s of [-1, 1]) {
+      const x = cx + (ax ? s * 1.3 : 0), z = cz + (ax ? 0 : s * 1.3);
+      if (nearRiver(x, z, 1.9) || rnd() > pres) continue;
+      const w = ax ? 1.5 + rnd() * .2 : 3.4 + rnd() * .5, d = ax ? 3.4 + rnd() * .5 : 1.5 + rnd() * .2;
+      const h = dn > 1 ? .7 + rnd() * 1.3 : hBase * (.3 + rnd() * rnd() * 1.3 + .25);
+      add(x, z, w, d, Math.max(.7, h), kindOf());
+    }
+    continue;
+  }
+  for (const [sx, sz] of LOTS) {
+    const x = cx + sx * 1.3 + (rnd() - .5) * .12, z = cz + sz * 1.3 + (rnd() - .5) * .12;
+    if (nearRiver(x, z, 1.1) || rnd() > pres) continue;
+    const h = dn > 1 ? .6 + rnd() * 1.4 : hBase * (.3 + rnd() * rnd() * 1.35 + .25);
+    add(x, z, 1.2 + rnd() * .45, 1.2 + rnd() * .45, Math.max(.7, h), kindOf());
+  }
+}
+const NEW_C = newPts.reduce((a, p) => [a[0] + p[0] / newPts.length, a[1] + p[1] / newPts.length], [0, 0]);
+
+/* ---------- 建筑 ---------- */
+const BV = /* glsl */`
+attribute vec4 aInfo;
+uniform float uBuild;
+varying vec3 vWorld; varying vec3 vN; varying vec4 vInfo; varying vec3 vCenter; varying float vH;
+void main(){
+  vec3 pos = position;
+  float sy = length(instanceMatrix[1].xyz);
+  float grow = 1.;
+  if(aInfo.z > .5){ grow = clamp(uBuild * 1.7 - aInfo.x * .7, 0., 1.); grow = grow*grow*(3.-2.*grow); grow = max(grow, .015); }
+  pos.y *= grow;
+  vec4 wp = modelMatrix * instanceMatrix * vec4(pos, 1.);
+  vWorld = wp.xyz;
+  vN = normalize(mat3(instanceMatrix) * normal);
+  vInfo = aInfo; vCenter = instanceMatrix[3].xyz; vH = sy * grow;
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}`;
+const BF = COMMON + /* glsl */`
+varying vec3 vWorld; varying vec3 vN; varying vec4 vInfo; varying vec3 vCenter; varying float vH;
+void main(){
+  vec3 n = normalize(vN);
+  float seed = vInfo.x; float kind = vInfo.y;
+  float dC = length(vWorld.xz);
+  float ign = 1. - smoothstep(uIgnite - 6., uIgnite, dC);
+  float litL = mix(.02, uLit * .74, ign);
+  float district = noise2(vWorld.xz * .05 + 7.3);
+  litL -= uBlack * smoothstep(.36, .6, district) * 1.15;
+  float rip = rippleField(vWorld.xz);
+  vec2 pf = pulseField(vWorld.xz);
+  litL += rip * .5 + max(pf.y, 0.) * .3 - max(-pf.y, 0.) * .2;
+  float glow = 1. - uDim * .55;
+  vec3 col = vec3(.014, .017, .027);
+  col += vec3(1., .6, .3) * exp(-vWorld.y * .7) * .07 * (.3 + uLit) * ign * glow * step(n.y, .5);
+
+  // 侧面窗格（在所有分支之外计算导数）
+  float side = abs(n.x) > .5 ? 1. : 0.;
+  float u = side > .5 ? vWorld.z : vWorld.x;
+  float v = vWorld.y;
+  vec2 cs = (kind > .5 && kind < 1.5) ? vec2(.24, .36) : vec2(.33, .43);
+  vec2 g = vec2(u, v) / cs;
+  vec2 fw = fwidth(g);
+  float far = smoothstep(.35, 1.1, max(fw.x, fw.y));
+
+  if(n.y > .5){
+    vec2 rl = vWorld.xz - vCenter.xz;
+    if(vH > 14.){
+      float blink = step(.5, fract(uTime * .55 + seed * 7.));
+      col += vec3(1., .07, .04) * smoothstep(.26, .05, length(rl)) * (blink * 3. + .25) * ign;
+    }
+  } else if(n.y > -.5){
+    vec2 cell = floor(g); vec2 f = fract(g);
+    float face = side > .5 ? sign(n.x) * 3. : sign(n.z) * 5.;
+    float hw = hash12(cell + vec2(seed * 131.7 + face * 17.3, seed * 71.1));
+    float hb = hash12(cell.yx * .713 + vec2(face, seed * 53.));
+    float floorH = hash12(vec2(cell.y, seed * 91.));
+    float thr = mix(hw, mix(seed, floorH, .5), .4);
+    float on = step(thr, litL);
+    float tog = step(.988, hash12(cell + floor(uTime * .09 + hw * 13.)));
+    on = abs(on - tog * ign);
+    float win = step(.16, f.x) * step(f.x, .84) * step(.2, f.y) * step(f.y, .78);
+    vec3 c1 = hb < .5 ? vec3(1., .64, .32) : (hb < .82 ? vec3(1., .47, .16) : vec3(.62, .76, 1.));
+    if(kind > .5 && kind < 1.5 && hb > .45) c1 = mix(c1, vec3(.7, .82, 1.), .45);
+    c1 = tempShift(c1, uWarm);
+    vec3 nearC = c1 * (.2 + hb * .72) * on * win;
+    vec3 avgC = tempShift(vec3(1., .6, .3), uWarm) * clamp(litL, 0., 1.) * .1;
+    vec3 wcol = mix(nearC, avgC, far);
+    float body = step(v, vH - .25) * step(.55, v);
+    col += wcol * glow * body;
+    col += vec3(1., .66, .36) * (1. - smoothstep(.12, .5, v)) * .28 * ign * clamp(uLit * 1.3, 0., 1.) * glow;
+    if(vH > 18. && seed > .55){
+      float band = smoothstep(vH - .9, vH - .6, v) * (1. - smoothstep(vH - .35, vH - .1, v));
+      vec3 bc = seed > .8 ? vec3(.45, .72, 1.) : vec3(1., .66, .34);
+      col += tempShift(bc, uWarm * .6) * band * .75 * clamp(litL * 1.5, .08, 1.) * ign * glow;
+    }
+    col += vec3(1., .74, .3) * rip * .7;
+    col += (pf.y >= 0. ? vec3(.25, .8, 1.) : vec3(1., .22, .18)) * pf.x * .45;
+  }
+  if(kind > 1.5 && kind < 2.5) col += vec3(.2, .7, 1.) * (uCB * (.25 + .12 * sin(uTime * 2. - vWorld.y * .4)) + .04) * ign;
+  if(kind > 2.5) col += vec3(1., .72, .28) * (uGov * (.28 + .1 * sin(uTime * 1.6)) + .03) * ign;
+  if(vInfo.z > .5){ float b = uBuild * (1. - smoothstep(.8, 1., uBuild)); float edgeY = smoothstep(vH - .5, vH - .05, vWorld.y); col += vec3(1., .66, .2) * b * (.12 + edgeY * 1.2) * step(n.y, .5); }
+  vec3 V = normalize(cameraPosition - vWorld);
+  float rim = pow(1. - max(dot(n, V), 0.), 4.);
+  col += uFogColor * rim * .2;
+  col = applyFog(col, length(cameraPosition - vWorld));
+  gl_FragColor = vec4(col, 1.);
+}`;
+const bGeo = new THREE.BoxGeometry(1, 1, 1); bGeo.translate(0, .5, 0);
+const bMat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: BV, fragmentShader: BF });
+const city = new THREE.InstancedMesh(bGeo, bMat, B.length);
+const info = new Float32Array(B.length * 4), m4 = new THREE.Matrix4();
+B.forEach((b, i) => { m4.makeScale(b.w, b.h, b.d); m4.setPosition(b.x, 0, b.z); city.setMatrixAt(i, m4); info.set([b.seed, b.kind, b.lot, 0], i * 4); });
+bGeo.setAttribute('aInfo', new THREE.InstancedBufferAttribute(info, 4));
+city.frustumCulled = false;
+scene.add(city);
+
+/* ---------- 地面：街道、路灯、河流、公路 ---------- */
+const GV = `varying vec3 vWorld; void main(){ vec4 wp = modelMatrix * vec4(position, 1.); vWorld = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`;
+const GF = COMMON + /* glsl */`
+uniform float uP, uHalfStreet, uColorMode;
+varying vec3 vWorld;
+void main(){
+  vec2 p = vWorld.xz;
+  float d = length(p);
+  float R = cityR(p);
+  float cityK = 1. - smoothstep(R - 4., R + 26., d);
+  float ign = 1. - smoothstep(uIgnite - 6., uIgnite, d);
+  float glow = 1. - uDim * .6;
+  vec3 col = vec3(.005, .007, .012);
+  vec3 sodium = tempShift(vec3(1., .58, .26), uWarm * .7);
+  vec2 ds = abs(fract(p / uP) - .5) * uP;
+  float m = min(ds.x, ds.y);
+  float aa = fwidth(m) * 1.2 + .02;
+  float street = 1. - smoothstep(uHalfStreet - aa, uHalfStreet + aa, m);
+  col += sodium * street * .1 * (.35 + uLit * .9) * ign * glow * cityK;
+  float along = ds.x < ds.y ? p.y : p.x;
+  float ls = uP * .5;
+  float la = abs(fract(along / ls) - .5) * ls;
+  float ld = length(vec2(la, m - uHalfStreet * .8));
+  float lampFade = 1. - smoothstep(.15, .5, fwidth(along));
+  col += sodium * exp(-ld * ld * 18.) * .9 * lampFade * ign * glow * cityK * (.5 + uLit * .5) * (1. - uColorMode * .6);
+  float rz = riverZ(p.x);
+  float dw = abs(p.y - rz);
+  float water = 1. - smoothstep(3., 3.4, dw);
+  float sh = noise2(vec2(p.x * 1.6, p.y * 5. + uTime * .35)) * noise2(vec2(p.x * .4 - uTime * .1, p.y * 2.));
+  vec3 refl = tempShift(vec3(1., .62, .32), uWarm) * sh*sh*sh * 1.4 * (.3 + uLit) * ign * glow * (.3 + cityK);
+  vec3 wcol = vec3(.004, .011, .024) + refl;
+  wcol = mix(wcol, col, street * .7);
+  col = mix(col, wcol, water);
+  float qb = (dw - 3.25) * 6.;
+  col += sodium * exp(-qb*qb) * .5 * ign * glow * (.25 + cityK);
+  float a = atan(p.y, p.x);
+  float seg = 6.2831853 / 6.;
+  float ak = floor((a - .3) / seg + .5) * seg + .3;
+  vec2 hd = vec2(cos(ak), sin(ak));
+  float hdist = abs(dot(p, vec2(-hd.y, hd.x)));
+  float hwy = (1. - smoothstep(.5, .9 + fwidth(hdist), hdist)) * step(0., dot(p, hd)) * smoothstep(R - 8., R + 4., d);
+  col += sodium * hwy * .22 * ign * glow;
+  vec2 vp = p * .35;
+  vec2 cp = fract(vp) - .5;
+  float vh = hash12(floor(vp));
+  float vfade = 1. - smoothstep(.25, .6, fwidth(vp.x));
+  col += vec3(1., .62, .3) * step(.986, vh) * exp(-dot(cp, cp) * 70.) * .8 * (1. - cityK) * vfade * ign * glow;
+  vec2 pf = pulseField(p);
+  col += (pf.y >= 0. ? vec3(.2, .75, 1.) : vec3(1., .2, .15)) * pf.x * .6;
+  col += vec3(1., .72, .3) * rippleField(p) * .55;
+  float qf = (d - uIgnite) / 3.;
+  col += vec3(1., .8, .55) * exp(-qf*qf) * .9 * step(uIgnite, 400.);
+  col = applyFog(col, length(cameraPosition - vWorld));
+  gl_FragColor = vec4(col, 1.);
+}`;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ uniforms: U, vertexShader: GV, fragmentShader: GF }));
+scene.add(ground);
+
+/* ---------- 天空与星星 ---------- */
+const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), new THREE.ShaderMaterial({
+  uniforms: U, side: THREE.BackSide, depthWrite: false, depthTest: false,
+  vertexShader: `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `uniform vec3 uHorizon, uZenith; varying vec3 vDir;
+  void main(){ vec3 d = normalize(vDir); float h = d.y;
+    vec3 col = mix(uHorizon, uZenith, smoothstep(-.02, .55, h));
+    col += uHorizon * .4 * exp(-max(h, 0.) * 12.);
+    col = mix(col, uHorizon * .7, smoothstep(0., -.15, h));
+    gl_FragColor = vec4(col, 1.); }`
+}));
+sky.renderOrder = -2; scene.add(sky);
+{
+  const n = 1800, pos = new Float32Array(n * 3), st = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const u = Math.random() * 2 * Math.PI, y = .04 + Math.pow(Math.random(), .8) * .96, r = Math.sqrt(1 - y * y);
+    pos.set([Math.cos(u) * r * 1200, y * 1200, Math.sin(u) * r * 1200], i * 3);
+    st.set([Math.pow(Math.random(), 3), .5 + Math.random() * 2.5, Math.random() * 6.28], i * 3);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aStar', new THREE.BufferAttribute(st, 3));
+  var stars = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec3 aStar; uniform float uTime, uStars; varying float vA;
+      void main(){ vA = uStars * (.35 + aStar.x * 1.6) * (.6 + .4 * sin(uTime * aStar.y + aStar.z)); gl_PointSize = 1.2 + aStar.x * 2.4; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+    fragmentShader: `varying float vA; void main(){ float r = length(gl_PointCoord - .5); float a = smoothstep(.5, 0., r); gl_FragColor = vec4(vec3(.8, .87, 1.) * a * vA, 1.); }`
+  }));
+  stars.frustumCulled = false; scene.add(stars);
+}
+
+/* ---------- 车流（每个光点都是一笔交易） ---------- */
+{
+  const A = [], Bq = [], C = [];
+  const RMAX = 96;
+  const addLine = (ox, oz, dx, dz, len, dens, sp) => {
+    for (let lane = 0; lane < 2; lane++) {
+      const n = Math.floor(len * dens);
+      for (let i = 0; i < n; i++) {
+        A.push(ox, oz, dx, dz); Bq.push(len, rnd() * len, sp * (.75 + rnd() * .5), rnd());
+        const r = rnd(); C.push(lane, r < .55 ? 0 : r < .8 ? 1 : r < .97 ? 2 : 3);
+      }
+    }
+  };
+  for (let k = -18; k < 18; k++) {
+    const c = (k + .5) * P; if (Math.abs(c) >= RMAX) continue;
+    const half = Math.sqrt(RMAX * RMAX - c * c);
+    addLine(-half, c, 1, 0, 2 * half, .42, 1); addLine(c, -half, 0, 1, 2 * half, .42, 1);
+  }
+  for (let k = 0; k < 6; k++) { const a = k * Math.PI * 2 / 6 + .3; addLine(Math.cos(a) * 58, Math.sin(a) * 58, Math.cos(a), Math.sin(a), 420, .22, 2.2); }
+  const n = A.length / 4, g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  g.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(A), 4));
+  g.setAttribute('aB', new THREE.BufferAttribute(new Float32Array(Bq), 4));
+  g.setAttribute('aC', new THREE.BufferAttribute(new Float32Array(C), 2));
+  const traffic = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec4 aA; attribute vec4 aB; attribute vec2 aC;
+      uniform float uPhase, uTraffic, uIgnite, uColorMode, uMoney, uPx, uFogDensity;
+      varying vec3 vCol; varying float vA;
+      float cityR(vec2 p){ float a = atan(p.y, p.x); return 62. + 8.*sin(3.*a + 1.) + 5.*sin(7.*a + .3); }
+      void main(){
+        float len = aB.x; float ds = aC.x < .5 ? 1. : -1.;
+        float s = mod(aB.y + uPhase * aB.z * ds, len);
+        vec2 dir = aA.zw; vec2 perp = vec2(-dir.y, dir.x);
+        vec2 p = aA.xy + dir * s + perp * (aC.x < .5 ? .2 : -.2);
+        float d = length(p); float R = cityR(p);
+        float ck = 1. - smoothstep(R - 2., R + 24., d);
+        float hwy = step(1.9, aB.z);
+        float dens = uTraffic * mix(mix(.12, 1., ck), .75, hwy);
+        float vis = step(aB.w, dens) * (1. - smoothstep(uIgnite - 6., uIgnite, d));
+        float edge = smoothstep(0., 4., s) * smoothstep(len, len - 4., s);
+        vec3 real = aC.x < .5 ? vec3(1., .88, .7) : vec3(1., .16, .08);
+        vec3 comp = aC.y < .5 ? vec3(1., .55, .12) : aC.y < 1.5 ? vec3(.1, .92, .76) : aC.y < 2.5 ? vec3(1., .22, .58) : vec3(.52, .46, 1.);
+        vec3 c = mix(real, comp * 1.25, uColorMode);
+        c = mix(c, vec3(.25, .85, 1.), clamp(uMoney, 0., 1.) * .8);
+        c = mix(c, vec3(1., .22, .15), clamp(-uMoney, 0., 1.) * .6);
+        vec4 mv = viewMatrix * vec4(p.x, .16, p.y, 1.);
+        float dist = -mv.z; float q = uFogDensity * dist;
+        vA = vis * edge * exp(-q*q);
+        vCol = c * 2.4;
+        gl_PointSize = vA > .002 ? clamp((.5 + uColorMode * .45) * uPx / dist, 1.3 + uColorMode, 10.) : 0.;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying vec3 vCol; varying float vA;
+      void main(){ float r = length(gl_PointCoord - .5); float a = smoothstep(.5, 0., r); a *= a; if(a * vA < .004) discard; gl_FragColor = vec4(vCol * a * vA, 1.); }`
+  }));
+  traffic.frustumCulled = false; scene.add(traffic);
+}
+
+/* ---------- 通胀的余烬：升起的 ¥ ---------- */
+{
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.font = '700 50px "Noto Serif SC", serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('¥', 32, 35);
+  U.uGlyph.value = new THREE.CanvasTexture(cv);
+  const n = 700, a = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) { const r = Math.sqrt(Math.random()) * 58, t = Math.random() * 6.283; a.set([Math.cos(t) * r, Math.sin(t) * r, Math.random() * 36, .9 + Math.random() * 1.8], i * 4); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('aE', new THREE.BufferAttribute(a, 4));
+  const embers = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec4 aE; uniform float uTime, uEmber, uPx, uIgnite; varying float vA;
+      void main(){ float h = mod(aE.z + uTime * aE.w, 36.);
+        vec3 p = vec3(aE.x + sin(uTime * .6 + aE.z) * .6, h + 1., aE.y + cos(uTime * .5 + aE.x) * .6);
+        vec4 mv = viewMatrix * vec4(p, 1.);
+        vA = uEmber * smoothstep(0., 4., h) * (1. - smoothstep(22., 36., h)) * (1. - smoothstep(uIgnite - 6., uIgnite, length(p.xz)));
+        gl_PointSize = vA > .002 ? clamp(1.5 * uPx / -mv.z, 2., 28.) : 0.;
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform sampler2D uGlyph; varying float vA;
+      void main(){ float a = texture2D(uGlyph, vec2(gl_PointCoord.x, 1. - gl_PointCoord.y)).a; if(a * vA < .01) discard; gl_FragColor = vec4(vec3(1., .42, .15) * 2.2 * a * vA, 1.); }`
+  }));
+  embers.frustumCulled = false; scene.add(embers);
+}
+
+/* ---------- 通缩的雪 ---------- */
+{
+  const n = 5200, a = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) a.set([(Math.random() - .5) * 230, (Math.random() - .5) * 230, Math.random() * 70, Math.random()], i * 4);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('aS', new THREE.BufferAttribute(a, 4));
+  const snow = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute vec4 aS; uniform float uTime, uSnow, uPx; varying float vA;
+      void main(){ float y = mod(aS.z - uTime * (1.3 + aS.w * 1.3), 70.);
+        vec3 p = vec3(aS.x + sin(uTime * .4 + aS.w * 12.) * 2., y, aS.y + cos(uTime * .3 + aS.w * 9.) * 2.);
+        vec4 mv = viewMatrix * vec4(p, 1.);
+        vA = uSnow * smoothstep(0., 6., y) * smoothstep(70., 60., y);
+        gl_PointSize = vA > .002 ? clamp(.32 * uPx / -mv.z, 1., 16.) : 0.;
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying float vA; void main(){ float r = length(gl_PointCoord - .5); float a = smoothstep(.5, .1, r); if(a * vA < .01) discard; gl_FragColor = vec4(vec3(.75, .86, 1.) * a * vA * .9, 1.); }`
+  }));
+  snow.frustumCulled = false; scene.add(snow);
+}
+
+/* ---------- 央行灯塔与政府光环 ---------- */
+const beamMat = (r, g, b) => new THREE.ShaderMaterial({
+  uniforms: { uColor: { value: new THREE.Color(r, g, b) }, uAmt: { value: 0 }, uTime: U.uTime },
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `uniform vec3 uColor; uniform float uAmt, uTime; varying vec2 vUv;
+    void main(){ float a = pow(vUv.y, 2.6) * uAmt * (.75 + .25 * sin(uTime * 2.)); gl_FragColor = vec4(uColor * a, 1.); }`
+});
+const cbBeam = new THREE.Mesh(new THREE.CylinderGeometry(.9, .3, 260, 20, 1, true), beamMat(.25, .8, 1.3));
+cbBeam.position.set(0, 40 + 130, 0); scene.add(cbBeam);
+cbBeam.geometry.attributes.uv.array.forEach((v, i, arr) => { if (i % 2 === 1) arr[i] = 1 - v; });
+const beacon = new THREE.Mesh(new THREE.SphereGeometry(.55, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(.5, 1.8, 2.6) }));
+beacon.position.set(0, 40.7, 0); scene.add(beacon);
+const govBeam = new THREE.Mesh(new THREE.CylinderGeometry(1.3, .6, 200, 20, 1, true), beamMat(1.3, .85, .3));
+govBeam.position.set(GOV.x, 10.5 + 100, GOV.z); scene.add(govBeam);
+govBeam.geometry.attributes.uv.array.forEach((v, i, arr) => { if (i % 2 === 1) arr[i] = 1 - v; });
+const govRing = new THREE.Mesh(new THREE.TorusGeometry(2.8, .06, 6, 90), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.1, .4) }));
+govRing.rotation.x = Math.PI / 2; govRing.position.set(GOV.x, 12, GOV.z); scene.add(govRing);
+
+/* ---------- 后期：泛光、热浪、色差、颗粒 ---------- */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .62, .45, .78);
+composer.addPass(bloom);
+const finalPass = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uHeat: { value: 0 }, uDesat: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime, uHeat, uDesat; uniform vec2 uRes; varying vec2 vUv;
+    void main(){
+      vec2 uv = vUv; float h = uHeat * smoothstep(.85, .15, uv.y);
+      uv.x += (sin(uv.y * 46. + uTime * 3.1) * .0016 + sin(uv.y * 13. - uTime * 1.7) * .0011) * h;
+      uv.y += sin(uv.x * 31. + uTime * 2.3) * .001 * h;
+      vec2 dir = uv - .5; float ca = .0012 + uHeat * .002;
+      vec3 c = vec3(texture2D(tDiffuse, uv + dir * ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - dir * ca).b);
+      float l = dot(c, vec3(.2126, .7152, .0722)); c = mix(c, vec3(l), uDesat);
+      float vig = smoothstep(1.05, .25, length(dir * vec2(1., .8)));
+      c *= mix(1., vig, .7);
+      float gr = fract(sin(dot(uv * uRes + fract(uTime) * 61., vec2(12.9898, 78.233))) * 43758.5453);
+      c += (gr - .5) * .018;
+      gl_FragColor = vec4(max(c, 0.), 1.);
+    }`
+});
+composer.addPass(finalPass);
+composer.addPass(new OutputPass());
+
+/* ---------- 尺寸 ---------- */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  U.uPx.value = .5 * h * dpr / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  finalPass.uniforms.uRes.value.set(w * dpr, h * dpr);
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- 交互：拖动旋转 ---------- */
+let userAz = 0, userEl = 0, drag = null;
+const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+addEventListener('pointermove', e => {
+  mouse.tx = e.clientX / innerWidth * 2 - 1; mouse.ty = e.clientY / innerHeight * 2 - 1;
+  if (drag) { userAz -= (e.clientX - drag.x) * .0045; userEl = clamp(userEl + (e.clientY - drag.y) * .003, -.5, .9); drag.x = e.clientX; drag.y = e.clientY; }
+}, { passive: true });
+addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button !== 0) return;
+  if (e.target.closest('.card,.hud,.rail,.brand,button,input,a,label,svg,.intro-inner')) return;
+  drag = { x: e.clientX, y: e.clientY }; document.body.classList.add('dragging');
+});
+addEventListener('pointerup', () => { drag = null; document.body.classList.remove('dragging'); });
+
+/* ---------- 主循环 ---------- */
+const cam = Object.assign({}, CITY.cam);
+const cH = new THREE.Color(), cZ = new THREE.Color(), tmp = new THREE.Color();
+const lbl = { cb: document.getElementById('lblCB'), gov: document.getElementById('lblGov'), nw: document.getElementById('lblNew') };
+const pCB = new THREE.Vector3(0, 45, 0), pGov = new THREE.Vector3(GOV.x, 15, GOV.z), pNew = new THREE.Vector3(NEW_C[0], 17, NEW_C[1]), pv = new THREE.Vector3();
+function place(el, p, show) {
+  pv.copy(p).project(camera);
+  const ok = show && pv.z < 1 && Math.abs(pv.x) < 1.05 && Math.abs(pv.y) < 1.05;
+  el.style.opacity = ok ? 1 : 0;
+  if (ok) el.style.transform = `translate(${((pv.x * .5 + .5) * innerWidth).toFixed(1)}px,${((-pv.y * .5 + .5) * innerHeight).toFixed(1)}px) translate(-50%,calc(-100% - 22px))`;
+}
+let last = performance.now() / 1000, viewShift = 0, sway = 0, pAcc = 0, pN = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const t = performance.now() / 1000, dt = Math.min(.1, t - last); last = t;
+  const v = CITY.Vc;
+  // 自适应分辨率
+  pAcc += dt; pN++;
+  if (pN >= 90) { const avg = pAcc / pN; pAcc = 0; pN = 0; if (avg > 1 / 40 && dpr > 1) { dpr = Math.max(1, dpr - .25); renderer.setPixelRatio(dpr); composer.setPixelRatio(dpr); resize(); } }
+
+  U.uTime.value = t;
+  U.uLit.value = v.lit; U.uWarm.value = v.warm; U.uBlack.value = v.black; U.uDim.value = v.dim; U.uBuild.value = v.build;
+  U.uCB.value = v.cb; U.uGov.value = v.gov; U.uDawn.value = v.dawn; U.uTraffic.value = v.traffic; U.uColorMode.value = v.colorMode;
+  U.uMoney.value = v.money; U.uEmber.value = v.ember; U.uSnow.value = v.snow;
+  U.uPhase.value += dt * 3 * v.speed;
+  let ig = 0, igK = 0;
+  if (CITY.igniteT >= 0) { const x = Math.min(1, (t - CITY.igniteT) / 3.4); ig = x < 1 ? 150 * (1 - Math.pow(1 - x, 2.2)) : 5000; igK = Math.min(1, (t - CITY.igniteT) / 2.6); }
+  U.uIgnite.value = ig;
+
+  CITY.pulses = CITY.pulses.filter(p => t - p.t0 < 4.2).slice(-4);
+  for (let i = 0; i < 4; i++) { const p = CITY.pulses[i]; U.uPulse.value[i].set(p ? p.t0 : 0, p ? p.sign : 0, p ? p.s : 0, p ? 1 : 0); }
+  CITY.ripples = CITY.ripples.filter(p => t - p.t0 < 4.8).slice(-8);
+  for (let i = 0; i < 8; i++) { const p = CITY.ripples[i]; U.uRipple.value[i].set(p ? p.t0 : 0, p ? p.amp : 0, p ? 1 : 0, 0); }
+
+  // 天色：城市灯光把地平线染成琥珀色
+  const lit = .1 + igK * v.lit;
+  cH.setRGB(.075, .04, .026).multiplyScalar(.14 + lit * .6);
+  if (v.warm > 0) cH.lerp(tmp.setRGB(.2, .04, .018).multiplyScalar(.4 + lit), v.warm * .8);
+  else cH.lerp(tmp.setRGB(.03, .055, .1).multiplyScalar(.5 + lit * .5), -v.warm * .85);
+  cH.multiplyScalar(1 - v.dim * .55);
+  cZ.setRGB(.005, .008, .02);
+  if (v.dawn > 0) { cH.lerp(tmp.setRGB(.95, .5, .32), v.dawn * .9); cZ.lerp(tmp.setRGB(.13, .2, .38), v.dawn * .9); }
+  U.uHorizon.value.copy(cH); U.uZenith.value.copy(cZ);
+  U.uFogColor.value.copy(cH).multiplyScalar(.7);
+  U.uFogDensity.value = .0028 + v.fog * .0105;
+  U.uStars.value = (.3 + .7 * (1 - igK * v.lit * .85)) * (1 - v.dawn) * (1 - v.fog * .5);
+
+  bloom.strength = .62 + Math.max(0, v.warm) * .4 - v.dim * .2 + v.cb * .08;
+  finalPass.uniforms.uTime.value = t; finalPass.uniforms.uHeat.value = CITY.reduce ? 0 : v.heat; finalPass.uniforms.uDesat.value = v.desat;
+  renderer.toneMappingExposure = .95 + v.dawn * .3 - v.dim * .12;
+
+  const cbAmt = (.15 + v.cb * .85) * igK;
+  cbBeam.material.uniforms.uAmt.value = v.cb * .55 * igK;
+  beacon.material.color.setRGB(.5, 1.8, 2.6).multiplyScalar(.35 + cbAmt * (1 + .4 * Math.sin(t * 3)));
+  govBeam.material.uniforms.uAmt.value = v.gov * .45 * igK;
+  govRing.material.color.setRGB(1.6, 1.1, .4).multiplyScalar((.2 + v.gov * .9) * igK);
+  govRing.rotation.z = t * .3;
+
+  // 镜头
+  const T = CITY.cam;
+  if (CITY.orbit && !CITY.reduce) T.az += dt * .018;
+  const k = 1 - Math.exp(-dt * .85);
+  let dAz = T.az - cam.az; dAz = Math.atan2(Math.sin(dAz), Math.cos(dAz));
+  cam.az += dAz * k; cam.el += (T.el - cam.el) * k; cam.dist += (T.dist - cam.dist) * k;
+  cam.tx += (T.tx - cam.tx) * k; cam.ty += (T.ty - cam.ty) * k; cam.tz += (T.tz - cam.tz) * k;
+  sway += dt;
+  mouse.x += (mouse.tx - mouse.x) * .04; mouse.y += (mouse.ty - mouse.y) * .04;
+  if (!drag && !CITY.sandbox) { userAz *= Math.exp(-dt * .12); userEl *= Math.exp(-dt * .12); }
+  const az = cam.az + userAz + (CITY.reduce ? 0 : Math.sin(sway * .07) * .04) + mouse.x * .04;
+  const el = clamp(cam.el + userEl - mouse.y * .02, .03, 1.45);
+  camera.position.set(cam.tx + cam.dist * Math.sin(az) * Math.cos(el), cam.ty + cam.dist * Math.sin(el), cam.tz + cam.dist * Math.cos(az) * Math.cos(el));
+  camera.lookAt(cam.tx, cam.ty, cam.tz);
+  viewShift += (CITY.viewShift - viewShift) * k;
+  camera.setViewOffset(innerWidth, innerHeight, -viewShift * innerWidth, 0, innerWidth, innerHeight);
+  sky.position.copy(camera.position); stars.position.copy(camera.position);
+
+  place(lbl.cb, pCB, igK > .5 && (v.cb > .4 || CITY.sandbox));
+  place(lbl.gov, pGov, igK > .5 && (v.gov > .4 || CITY.sandbox));
+  place(lbl.nw, pNew, igK > .5 && v.gov > .4 && v.build > .6);
+
+  composer.render();
+  if (!CITY.glReady) { CITY.glReady = true; document.documentElement.classList.remove('no-gl'); }
+}
+frame();
+</script>
+
+</body>
+</html>
